@@ -26,3 +26,12 @@ class TrainingSession:
         
     def add_set(self, set: Set):
         self.sets.append(set)
+
+    def is_active(self):
+        return self._status == 'In progress'
+    
+    def end(self):
+        if self._status == 'Completed':
+            raise ValueError('Session is completed')
+        
+        self._status = 'Completed'
