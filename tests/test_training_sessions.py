@@ -70,9 +70,6 @@ def test_create_series():
     assert set.power == power
 
 def test_add_set_to_session(sample_set,sample_training_session):
-    
-    
-
     sample_training_session.add_set(sample_set)
 
     assert sample_training_session.sets == [sample_set]
