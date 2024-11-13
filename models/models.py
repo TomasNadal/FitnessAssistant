@@ -2,11 +2,11 @@ from typing import Optional, List
 from dataclasses import dataclass
 from datetime import datetime
 
-@dataclass(frozen=True)
+@dataclass(unsafe_hash=True)
 class Set:
     exercise: str
-    set: str
-    repetition: str
+    series: int
+    repetition: int
     kg: float
     distance: Optional[float] = None
     mean_velocity: Optional[float]= None
@@ -27,6 +27,15 @@ class TrainingSession:
         self._status = 'In progress'
         self._modified_at = started_at
         
+    def __eq__(self,other):
+        if not isinstance(other, TrainingSession):
+            return False
+        
+        return (self.id, self.user.id)  == (other.id, other.user.id)
+    
+    def __hash__(self):
+        return hash(self.id, self.user.id)
+    
 
     def is_active(self):
         return self._status == 'In progress'

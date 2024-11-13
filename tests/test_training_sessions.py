@@ -12,8 +12,8 @@ def sample_user():
 def sample_set():
     return Set(
         exercise="Press Banca",
-        set="S1",
-        repetition="R1",
+        series=1,
+        repetition=1,
         kg=104,
         distance=0.41,
         mean_velocity=0.21,
@@ -51,8 +51,8 @@ def test_create_training_session(sample_user):
 
 def test_create_series():
     exercise = "Press Banca"
-    set_num = "S1"
-    repetition = "R1"
+    series = 1
+    repetition = 1
     kg = 104
     distance = 0.41
     mean_velocity = 0.21
@@ -61,7 +61,7 @@ def test_create_series():
     rir = 0
 
     set = Set(exercise = exercise,
-                                     set = set_num,
+                                     series = series,
                                      repetition = repetition,
                                      kg = kg,
                                      distance = distance,
@@ -70,7 +70,7 @@ def test_create_series():
                                      power = power)
     
     assert set.exercise == exercise
-    assert set.set == set_num
+    assert set.series == series
     assert set.repetition == repetition
     assert set.kg == kg
     assert set.distance == distance
