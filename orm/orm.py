@@ -1,5 +1,5 @@
 from sqlalchemy import Table, MetaData, Column, Integer, String, Date, ForeignKey, Float, DateTime
-from sqlalchemy.orm import mapper, relationship
+from sqlalchemy.orm import registry,  relationship
 
 import models.models as model
 
@@ -8,10 +8,10 @@ import models.models as model
 '''
 Metadata contains information of the database schema
 '''
-metadata = MetaData()
+mapper_registry = registry()
 
 user = Table('user',
-              metadata,
+              mapper_registry.metadata,
               Column('id', Integer, primary_key=True, autoincrement = True),
               Column('phone_number', String(15)),
               Column('name', String(255), nullable=True),
@@ -26,8 +26,9 @@ user = Table('user',
 
 
 
+
 training_session = Table('training_session',
-                         metadata,
+                         mapper_registry.metadata,
                          Column('id', Integer, primary_key=True, autoincrement=True),
                          Column('user_id', Integer, ForeignKey('user.id')),
                          Column('reference', String),
@@ -37,7 +38,7 @@ training_session = Table('training_session',
                          )
 
 sets = Table('sets', 
-             metadata,
+             mapper_registry.metadata,
              Column("id", Integer, primary_key=True, autoincrement=True),
              Column('session_id', Integer, ForeignKey('training_session.id')),
              Column('exercise', String(255)),
@@ -56,16 +57,16 @@ sets = Table('sets',
 # relationships defined in the domain class
 
 def start_mappers():
-    sets_mapper = mapper(model.Set, sets)
+    sets_mapper = mapper_registry.map_imperatively(model.Set, sets)
 
-    training_session_mapper = mapper(model.TrainingSession,
+    training_session_mapper = mapper_registry.map_imperatively(model.TrainingSession,
             training_session,
             properties = {
                 'sets' : relationship(sets_mapper, collection_class=set)
             }
             )
     
-    mapper(model.User,
+    mapper_registry.map_imperatively(model.User,
            user,
            properties = {
                'training_sessions' : relationship(training_session_mapper, backref='user')

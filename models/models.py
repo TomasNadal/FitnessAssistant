@@ -66,3 +66,13 @@ class User:
         self.gender = gender
         self.height = height
         self.weight = weight
+
+
+
+    def __eq__(self, other):
+        if not isinstance(other,User):
+            return False
+        return other.id == self.id
+    
+    def __hash__(self):
+        return hash(self.id)
