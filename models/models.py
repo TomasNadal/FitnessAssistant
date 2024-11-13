@@ -8,28 +8,31 @@ class Set:
     set: str
     repetition: str
     kg: float
-    distance: float
-    mean_velocity: float
-    peak_velocity: float
-    power: float
+    distance: Optional[float] = None
+    mean_velocity: Optional[float]= None
+    peak_velocity: Optional[float]= None
+    power: Optional[float]= None
+    rir: Optional[float]= None
 
 
 
 
 class TrainingSession:
-    def __init__(self, user: str, timestamp: datetime):
+    def __init__(self, id: int, user: 'User', started_at: datetime):
+        self.id = id
         self.user = user
-        self.timestamp = timestamp
-        self.sets = []
-        self.reference = f'{user}-{timestamp}'
+        self.started_at = started_at
+        self.sets = set()
+        self.reference = f'{user.id}-{started_at}'
         self._status = 'In progress'
+        self._modified_at = started_at
         
 
     def is_active(self):
         return self._status == 'In progress'
     
     def add_set(self, set: Set):        
-        self.sets.append(set)
+        self.sets.add(set)
 
     def end(self):
         if self._status == 'Completed':
@@ -54,7 +57,7 @@ class User:
     ):
         self.id = id
         self.phone_number = phone_number
-        self.training_session = []
+        self.training_sessions = []
         self.name = name
         self.surname = surname
         self.email = email

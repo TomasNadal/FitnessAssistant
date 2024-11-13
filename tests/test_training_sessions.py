@@ -1,6 +1,12 @@
 import pytest
 from datetime import datetime
-from models.models import TrainingSession, Set
+from models.models import TrainingSession, Set, User
+
+
+@pytest.fixture
+def sample_user():
+    return User(id = 1, phone_number='+3467854323')
+
 
 @pytest.fixture
 def sample_set():
@@ -16,29 +22,31 @@ def sample_set():
     )
 
 @pytest.fixture
-def sample_training_session():
+def sample_training_session(sample_user):
     return TrainingSession(
-        user = "user1",
-        timestamp=datetime.now()
+        id = 1,
+        user = sample_user,
+        started_at=datetime.now()
     )
 
 
-def create_training_session(user, timestamp: datetime):
-    return TrainingSession(user = user, timestamp = timestamp)
+def create_training_session(id, user, started_at: datetime):
+    return TrainingSession(id = id, user = user, started_at = started_at)
 
-def test_create_training_session():
-    user = 'user1'
-    timestamp = datetime.now()
-    reference = f'{user}-{timestamp}'
+def test_create_training_session(sample_user):
+    id = 1244
+    started_at = datetime.now()
+    reference = f'{sample_user.id}-{started_at}'
     status = 'In progress'
 
-    training_session = create_training_session(user = user, timestamp = timestamp)
+    training_session = create_training_session(id = id, user = sample_user, started_at = started_at)
 
-    assert training_session.user == user
-    assert training_session.timestamp == timestamp
+    assert training_session.id == id
+    assert training_session.user == sample_user
+    assert training_session.started_at == started_at
     assert training_session.reference == reference
     assert training_session._status == "In progress"
-    assert training_session.sets == []
+    assert training_session.sets == set()
 
 
 def test_create_series():
@@ -50,6 +58,7 @@ def test_create_series():
     mean_velocity = 0.21
     peak_velocity = 0.8
     power = 213
+    rir = 0
 
     set = Set(exercise = exercise,
                                      set = set_num,
@@ -69,10 +78,10 @@ def test_create_series():
     assert set.peak_velocity == peak_velocity
     assert set.power == power
 
-def test_add_set_to_session(sample_set,sample_training_session):
+def test_add_set_to_session(sample_user, sample_set,sample_training_session):
     sample_training_session.add_set(sample_set)
 
-    assert sample_training_session.sets == [sample_set]
+    assert sample_training_session.sets == {sample_set}
 
 
 def test_is_session_active(sample_training_session):

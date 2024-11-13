@@ -14,4 +14,4 @@ def test_basic_create_user():
     print(new_user.id)
     assert new_user.id == id
     assert new_user.phone_number == phone_number
-    assert new_user.training_session == []
+    assert new_user.training_sessions == []
