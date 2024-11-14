@@ -11,7 +11,7 @@ class UserAbstractRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get(self, id) -> model.User:
+    def get(self, phone_number) -> model.User:
         raise NotImplementedError
 
 
@@ -22,8 +22,8 @@ class SqlAlchemyRepository(UserAbstractRepository):
     def add(self, user):
         self.session.add(user)
 
-    def get(self, id):
-        self.session.query(model.User).filter_by(id = id).one()
+    def get(self, phone_number):
+        return self.session.query(model.User).filter_by(phone_number = phone_number).one()
 
     def list(self):
-        self.session.query(model.User).all()
+        return self.session.query(model.User).all()

@@ -8,7 +8,7 @@ import uuid
 def test_repository_can_save_user(session):
 
     # Prepare
-    new_user = model.User('+34545222123','Jose')
+    new_user = model.User(phone_number='+34545222123',name = 'Jose')
     user_repo = repository.SqlAlchemyRepository(session)
 
     # Function to assess
@@ -24,8 +24,8 @@ def test_repository_can_save_user(session):
 def insert_user(session):
     user_id = str(uuid.uuid4())
     session.execute(
-        text("INSERT INTO user (id, phone_number, name) VALUES (:id, :phone, :name)"),
-        {"id": user_id, "phone": "+34635805355", "name": "Jose"}
+        text("INSERT INTO user (id, phone_number, name) VALUES (:id, :phone_number, :name)"),
+        {"id": user_id, "phone_number": '+34545222123', "name": "Jose"}
     )
     return user_id
 
@@ -80,4 +80,12 @@ def test_repository_can_retrieve_user_with_training_sessions(session):
     set_id = insert_set(session, training_session_id)
 
     repo = repository.SqlAlchemyRepository(session)
-    retrieved = repo.get
+    expected = model.User("+34545222123", "Jose")
+    expected.id = user_id
+
+    retrieved = repo.get("+34545222123")
+
+    assert expected == retrieved
+    assert retrieved.training_sessions[0].id == training_session_id
+    
+

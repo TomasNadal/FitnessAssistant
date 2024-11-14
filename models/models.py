@@ -100,7 +100,7 @@ class User:
     def __eq__(self, other):
         if not isinstance(other,User):
             return False
-        return other.id == self.id
+        return (other.id == self.id) and (other.phone_number == self.phone_number)
     
     def __hash__(self):
         return hash(self.id)
