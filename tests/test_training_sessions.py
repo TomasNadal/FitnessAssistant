@@ -2,36 +2,8 @@ import pytest
 from datetime import datetime
 from models.models import TrainingSession, Set, User
 
-
-@pytest.fixture
-def sample_user():
-    return User(id = 1, phone_number='+3467854323')
-
-
-@pytest.fixture
-def sample_set():
-    return Set(
-        exercise="Press Banca",
-        series=1,
-        repetition=1,
-        kg=104,
-        distance=0.41,
-        mean_velocity=0.21,
-        peak_velocity=0.8,
-        power=213
-    )
-
-@pytest.fixture
-def sample_training_session(sample_user):
-    return TrainingSession(
-        id = 1,
-        user = sample_user,
-        started_at=datetime.now()
-    )
-
-
-def create_training_session(id, user, started_at: datetime):
-    return TrainingSession(id = id, user = user, started_at = started_at)
+def create_training_session(id, user_id, started_at: datetime):
+    return TrainingSession(id = id, user_id = user_id, started_at = started_at)
 
 def test_create_training_session(sample_user):
     id = 1244
@@ -39,10 +11,10 @@ def test_create_training_session(sample_user):
     reference = f'{sample_user.id}-{started_at}'
     status = 'In progress'
 
-    training_session = create_training_session(id = id, user = sample_user, started_at = started_at)
+    training_session = create_training_session(id = id, user_id = sample_user.id, started_at = started_at)
 
     assert training_session.id == id
-    assert training_session.user == sample_user
+    assert training_session.user_id == sample_user.id
     assert training_session.started_at == started_at
     assert training_session.reference == reference
     assert training_session._status == "In progress"

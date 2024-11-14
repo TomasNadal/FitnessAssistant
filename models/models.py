@@ -1,6 +1,24 @@
+from __future__ import annotations
 from typing import Optional, List
 from dataclasses import dataclass
 from datetime import datetime
+
+
+class NotActiveSessions(Exception):
+    pass
+
+
+
+def add_set(set: Set, training_sessions: List[TrainingSession]) -> int:
+    try:
+        training_session = next(t for t in sorted(training_sessions, reverse=True) if t.is_active())
+        training_session.add_set(set) 
+
+        return training_session.id
+    except StopIteration:
+        raise NotActiveSessions 
+
+
 
 @dataclass(unsafe_hash=True)
 class Set:
@@ -16,14 +34,14 @@ class Set:
 
 
 
-
+#Check this, maybe I should just store user_id, not the whole object
 class TrainingSession:
-    def __init__(self, id: int, user: 'User', started_at: datetime):
+    def __init__(self, id: int, user_id: int, started_at: datetime):
         self.id = id
-        self.user = user
+        self.user_id = user_id
         self.started_at = started_at
         self.sets = set()
-        self.reference = f'{user.id}-{started_at}'
+        self.reference = f'{user_id}-{started_at}'
         self._status = 'In progress'
         self._modified_at = started_at
         
@@ -31,11 +49,14 @@ class TrainingSession:
         if not isinstance(other, TrainingSession):
             return False
         
-        return (self.id, self.user.id)  == (other.id, other.user.id)
+        return (self.id, self.user_id)  == (other.id, other.user_id)
     
     def __hash__(self):
-        return hash(self.id, self.user.id)
+        return hash(self.id, self.user_id)
     
+
+    def __gt__(self, other):
+        return self.started_at > other.started_at
 
     def is_active(self):
         return self._status == 'In progress'

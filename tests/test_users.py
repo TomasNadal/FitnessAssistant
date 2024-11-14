@@ -2,9 +2,6 @@ import pytest
 from models.models import TrainingSession,User,Set
 
 
-@pytest.fixture
-def sample_user():
-    return User(id = 1, phone_number='+3467854323')
 
 def test_basic_create_user():
     id = 1

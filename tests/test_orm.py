@@ -55,7 +55,7 @@ def test_mapper_can_load_training_session(session):
     }
 )
 
-    expected = [model.TrainingSession(1,new_user, current_time)]
+    expected = [model.TrainingSession(1,new_user.id, current_time)]
     
     assert session.query(model.TrainingSession).all() == expected
 
@@ -68,7 +68,7 @@ def test_mapper_can_save_training_sessions(session):
 
     current_time = datetime.now()
 
-    new_training_session = model.TrainingSession(1,new_user, current_time)
+    new_training_session = model.TrainingSession(1,new_user.id, current_time)
     session.add(new_training_session)
     session.commit()
 
@@ -87,7 +87,7 @@ def test_mapper_can_load_sets(session):
 
     # Create new training_session:
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(1, new_user, current_time)
+    new_training_session = model.TrainingSession(1, new_user.id, current_time)
     session.add(new_training_session)
     session.commit()
 
@@ -139,7 +139,7 @@ def test_mapper_can_save_sets(session):
     session.commit()
 
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(1, new_user, current_time)
+    new_training_session = model.TrainingSession(1, new_user.id, current_time)
     session.add(new_training_session)
     session.commit()
 
