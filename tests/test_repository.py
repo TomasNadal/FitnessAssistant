@@ -32,22 +32,20 @@ def insert_user(session):
 def insert_training_session(session, user_id):
     session.execute(
     text(
-        "INSERT INTO training_session (user_id,reference,status,started_at,modified_at) "
-        "VALUES (:user_id, :reference, :status, :started_at, :modified_at)"
+        "INSERT INTO training_session (user_id,status,started_at,modified_at) "
+        "VALUES (:user_id,  :status, :started_at, :modified_at)"
     ),
     {
         "user_id": user_id,
-        "reference": "referencia",
         "status": "In progress",
         "started_at": datetime.now(),
         "modified_at": datetime.now()
     }
         )
     
-    [[training_session_id]] = session.execute(text("SELECT id FROM trianing_session WHERE user_id = :user_id AND reference =:reference AND status = :status"), 
+    [[training_session_id]] = session.execute(text("SELECT id FROM trianing_session WHERE user_id = :user_id AND status = :status"), 
                                              {
                                                 "user_id": user_id,
-                                                "reference": "referencia",
                                                 "status": "In progress"
                                             } )
     

@@ -36,12 +36,10 @@ class Set:
 
 #Check this, maybe I should just store user_id, not the whole object
 class TrainingSession:
-    def __init__(self, id: int, user_id: int, started_at: datetime):
+    def __init__(self, id: int, started_at: datetime):
         self.id = id
-        self.user_id = user_id
         self.started_at = started_at
         self.sets = set()
-        self.reference = f'{user_id}-{started_at}'
         self._status = 'In progress'
         self._modified_at = started_at
         
@@ -49,7 +47,7 @@ class TrainingSession:
         if not isinstance(other, TrainingSession):
             return False
         
-        return (self.id, self.user_id)  == (other.id, other.user_id)
+        return ((self.id, self.started_at)  == (other.id, other.started_at))
     
     def __hash__(self):
         return hash(self.id, self.user_id)
@@ -106,3 +104,7 @@ class User:
     
     def __hash__(self):
         return hash(self.id)
+    
+
+    def add_training_session(self, training_session: TrainingSession):
+        self.training_sessions.append(training_session)

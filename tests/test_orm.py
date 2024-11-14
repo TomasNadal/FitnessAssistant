@@ -43,19 +43,19 @@ def test_mapper_can_load_training_session(session):
     # 
     session.execute(
     text(
-        "INSERT INTO training_session (user_id,reference,status,started_at,modified_at) "
-        "VALUES (:user_id, :reference, :status, :started_at, :modified_at)"
+        "INSERT INTO training_session (id, user_id, status, started_at, modified_at) "
+        "VALUES (:id, :user_id, :status, :started_at, :modified_at)"
     ),
     {
-        "user_id": 1,
-        "reference": "Hey",
+        "id": 1,
+        "user_id": new_user.id,
         "status": "In progress",
         "started_at": current_time,
         "modified_at": current_time
     }
 )
 
-    expected = [model.TrainingSession(1,new_user.id, current_time)]
+    expected = [model.TrainingSession(1,current_time)]
     
     assert session.query(model.TrainingSession).all() == expected
 
@@ -68,8 +68,8 @@ def test_mapper_can_save_training_sessions(session):
 
     current_time = datetime.now()
 
-    new_training_session = model.TrainingSession(1,new_user.id, current_time)
-    session.add(new_training_session)
+    new_training_session = model.TrainingSession(1, current_time)
+    new_user.add_training_session(new_training_session)
     session.commit()
 
     rows = list(session.execute(text("SELECT id, user_id, started_at FROM 'training_session'")))
@@ -87,7 +87,7 @@ def test_mapper_can_load_sets(session):
 
     # Create new training_session:
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(1, new_user.id, current_time)
+    new_training_session = model.TrainingSession(1, current_time)
     session.add(new_training_session)
     session.commit()
 
@@ -139,8 +139,8 @@ def test_mapper_can_save_sets(session):
     session.commit()
 
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(1, new_user.id, current_time)
-    session.add(new_training_session)
+    new_training_session = model.TrainingSession(1,  current_time)
+    new_user.add_training_session(new_training_session)
     session.commit()
 
     new_training_set = model.Set(exercise = 'Press Banca',

@@ -29,20 +29,29 @@ def sample_user():
 
 @pytest.fixture
 def sample_training_session(sample_user):
-    return TrainingSession(
+    training_session = TrainingSession(
         id = 1,
-        user_id = sample_user.id,
         started_at=datetime.now()
     )
+
+    sample_user.add_training_session(training_session)
+
+    return training_session
+
 
 
 @pytest.fixture
 def list_of_training_sessions(sample_user):
-    return [TrainingSession(
+    list_of_training = [TrainingSession(
         id = i,
-        user_id = sample_user.id,
         started_at=datetime.now() - timedelta(days=i)
     ) for i in range(1,4,1)]
+
+    for session in list_of_training:
+        sample_user.add_training_session(session)
+
+    return list_of_training
+
 
 
 @pytest.fixture

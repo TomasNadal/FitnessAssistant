@@ -2,21 +2,19 @@ import pytest
 from datetime import datetime
 from models.models import TrainingSession, Set, User
 
-def create_training_session(id, user_id, started_at: datetime):
-    return TrainingSession(id = id, user_id = user_id, started_at = started_at)
-
 def test_create_training_session(sample_user):
     id = 1244
     started_at = datetime.now()
-    reference = f'{sample_user.id}-{started_at}'
     status = 'In progress'
 
-    training_session = create_training_session(id = id, user_id = sample_user.id, started_at = started_at)
-
+    training_session = TrainingSession(id = id, started_at = started_at)
+    sample_user.add_training_session(training_session)
+    
+    # Then
+    assert training_session in sample_user.training_sessions
+    assert len(sample_user.training_sessions) == 1
     assert training_session.id == id
-    assert training_session.user_id == sample_user.id
     assert training_session.started_at == started_at
-    assert training_session.reference == reference
     assert training_session._status == "In progress"
     assert training_session.sets == set()
 
@@ -49,6 +47,24 @@ def test_create_series():
     assert set.mean_velocity == mean_velocity
     assert set.peak_velocity == peak_velocity
     assert set.power == power
+
+
+def test_create_and_add_training_session_(sample_user):
+    id = 1244
+    started_at = datetime.now()
+    status = 'In progress'
+
+    training_session = TrainingSession(id = id, started_at = started_at)
+
+    sample_user.add_training_session(training_session)
+
+    assert sample_user.training_sessions == [training_session]
+    added_session = sample_user.training_sessions[0]
+    assert training_session.id == id
+    assert training_session.started_at == started_at
+    assert training_session._status == "In progress"
+    assert training_session.sets == set()
+
 
 def test_add_set_to_session(sample_user, sample_set,sample_training_session):
     sample_training_session.add_set(sample_set)

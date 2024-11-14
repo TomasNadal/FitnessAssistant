@@ -31,7 +31,6 @@ training_session = Table('training_session',
                          mapper_registry.metadata,
                          Column('id', Integer, primary_key=True, autoincrement=True),
                          Column('user_id', Integer, ForeignKey('user.id')),
-                         Column('reference', String),
                          Column('status', String),
                          Column('started_at',DateTime),
                          Column('modified_at',DateTime) 
@@ -69,7 +68,7 @@ def start_mappers():
     mapper_registry.map_imperatively(model.User,
            user,
            properties = {
-               'training_sessions' : relationship(training_session_mapper, backref='user')
+               'training_sessions' : relationship(training_session_mapper, collection_class=list)
            })
     
 
