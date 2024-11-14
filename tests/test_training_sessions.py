@@ -3,17 +3,15 @@ from datetime import datetime
 from models.models import TrainingSession, Set, User
 
 def test_create_training_session(sample_user):
-    id = 1244
     started_at = datetime.now()
     status = 'In progress'
 
-    training_session = TrainingSession(id = id, started_at = started_at)
+    training_session = TrainingSession(started_at = started_at)
     sample_user.add_training_session(training_session)
     
     # Then
     assert training_session in sample_user.training_sessions
     assert len(sample_user.training_sessions) == 1
-    assert training_session.id == id
     assert training_session.started_at == started_at
     assert training_session._status == "In progress"
     assert training_session.sets == set()
@@ -50,17 +48,15 @@ def test_create_series():
 
 
 def test_create_and_add_training_session_(sample_user):
-    id = 1244
     started_at = datetime.now()
     status = 'In progress'
 
-    training_session = TrainingSession(id = id, started_at = started_at)
+    training_session = TrainingSession(started_at = started_at)
 
     sample_user.add_training_session(training_session)
 
     assert sample_user.training_sessions == [training_session]
     added_session = sample_user.training_sessions[0]
-    assert training_session.id == id
     assert training_session.started_at == started_at
     assert training_session._status == "In progress"
     assert training_session.sets == set()

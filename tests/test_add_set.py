@@ -10,7 +10,6 @@ times = [now,yesterday,last_week]
 
 def test_add_set_to_most_recent_session(sample_user, sample_set):
     training_sessions = [TrainingSession(
-        id = i,
         started_at=times[i]
     ) for i in range(3)]
     

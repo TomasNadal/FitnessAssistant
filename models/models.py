@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, List
 from dataclasses import dataclass
 from datetime import datetime
+import uuid
 
 
 class NotActiveSessions(Exception):
@@ -36,8 +37,8 @@ class Set:
 
 #Check this, maybe I should just store user_id, not the whole object
 class TrainingSession:
-    def __init__(self, id: int, started_at: datetime):
-        self.id = id
+    def __init__(self, started_at: datetime):
+        self.id = str(uuid.uuid4())  
         self.started_at = started_at
         self.sets = set()
         self._status = 'In progress'
@@ -50,7 +51,7 @@ class TrainingSession:
         return ((self.id, self.started_at)  == (other.id, other.started_at))
     
     def __hash__(self):
-        return hash(self.id, self.user_id)
+        return hash(self.id, self.started_at)
     
 
     def __gt__(self, other):
@@ -72,7 +73,6 @@ class TrainingSession:
         
 class User:
     def __init__(self,
-    id: int,
     phone_number: str,
     name: Optional[str] = None,
     surname: Optional[str] = None,
@@ -83,7 +83,7 @@ class User:
     height: Optional[float] = None,
     weight: Optional[float] = None
     ):
-        self.id = id
+        self.id = str(uuid.uuid4())  
         self.phone_number = phone_number
         self.training_sessions = []
         self.name = name

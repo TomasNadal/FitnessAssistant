@@ -13,19 +13,9 @@ class UserAbstractRepository(abc.ABC):
     @abc.abstractmethod
     def get(self, id) -> model.User:
         raise NotImplementedError
-    
-class TrainingSessionAbstractRepository(abc.ABC):
-    @abc.abstractmethod
-    def add(self, training_session: model.TrainingSession):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get(self, user_id: int) -> model.TrainingSession:
-        raise NotImplementedError
 
 
-
-class UserSqlAlchemyRepository(UserAbstractRepository):
+class SqlAlchemyRepository(UserAbstractRepository):
     def __init__(self, session):
         self.session = session
 
@@ -37,13 +27,3 @@ class UserSqlAlchemyRepository(UserAbstractRepository):
 
     def list(self):
         self.session.query(model.User).all()
-
-class TrainingSessionSqlAlchemyRepository(TrainingSessionAbstractRepository):
-    def __init__(self, session):
-        self.session = session
-
-    def add(self, training_session):
-        self.session.add(training_session)
-
-    def get(self, user_id):
-        self.session.query(model.TrainingSession).filter_by(user_id = user_id)

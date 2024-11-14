@@ -23,14 +23,13 @@ def session(in_memory_db):
 
 @pytest.fixture
 def sample_user():
-    return User(id = 1, phone_number='+3467854323')
+    return User(phone_number='+3467854323')
 
 
 
 @pytest.fixture
 def sample_training_session(sample_user):
     training_session = TrainingSession(
-        id = 1,
         started_at=datetime.now()
     )
 
@@ -43,7 +42,6 @@ def sample_training_session(sample_user):
 @pytest.fixture
 def list_of_training_sessions(sample_user):
     list_of_training = [TrainingSession(
-        id = i,
         started_at=datetime.now() - timedelta(days=i)
     ) for i in range(1,4,1)]
 

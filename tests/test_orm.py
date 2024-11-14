@@ -6,48 +6,56 @@ from datetime import datetime
 
 def test_mapper_can_load_user(session):
 
-    session.execute(text("INSERT INTO user (phone_number) VALUES "
-                    '("+34600000000"),'
-                    '("+34600000001"),'
-                    '("+34600000002")'
-                ))
+    expected = [model.User(phone_number="+34600000000"),
+                model.User(phone_number="+34600000001"),
+                model.User(phone_number="+34600000002")]
     
-    expected = [model.User(1,phone_number="+34600000000"),
-                model.User(2,phone_number="+34600000001"),
-                model.User(3,phone_number="+34600000002")]
+    [id1,id2,id3] = [user.id for user in expected]
+    session.execute(text("INSERT INTO user (id, phone_number) VALUES "
+                    '(:id1,"+34600000000"),'
+                    '(:id2, "+34600000001"),'
+                    '(:id3, "+34600000002")'
+                ), dict(id1 = id1, id2 = id2, id3 = id3))
+    
+
     
 
     assert session.query(model.User).all() == expected
 
 def test_mapper_can_save_user(session):
 
-    new_user = model.User(1,phone_number="+34600000000")
+    new_user = model.User(phone_number="+34600000000")
+    id = new_user.id
     session.add(new_user)
 
     session.commit()
 
     rows = list(session.execute(text('SELECT id, phone_number FROM "user"')))
 
-    assert rows == [(1, "+34600000000")]
+    assert rows == [(id, "+34600000000")]
 
 
 def test_mapper_can_load_training_session(session):
 
     # Create new user
-    new_user = model.User(1 , phone_number="+34600000000")
+    new_user = model.User(phone_number="+34600000000")
     session.add(new_user)
     session.commit()
 
     current_time = datetime.now()
 
     # 
+    expected = [model.TrainingSession(current_time)]
+    
+    session_id = expected[0].id
+    
     session.execute(
     text(
         "INSERT INTO training_session (id, user_id, status, started_at, modified_at) "
         "VALUES (:id, :user_id, :status, :started_at, :modified_at)"
     ),
     {
-        "id": 1,
+        "id": session_id,
         "user_id": new_user.id,
         "status": "In progress",
         "started_at": current_time,
@@ -55,40 +63,44 @@ def test_mapper_can_load_training_session(session):
     }
 )
 
-    expected = [model.TrainingSession(1,current_time)]
+
     
     assert session.query(model.TrainingSession).all() == expected
 
 
 def test_mapper_can_save_training_sessions(session):
     # Create new user
-    new_user = model.User(1 , phone_number="+34600000000")
+    new_user = model.User(phone_number="+34600000000")
     session.add(new_user)
+    user_id = new_user.id
     session.commit()
 
     current_time = datetime.now()
 
-    new_training_session = model.TrainingSession(1, current_time)
+    new_training_session = model.TrainingSession(current_time)
     new_user.add_training_session(new_training_session)
+    id = new_training_session.id
     session.commit()
 
     rows = list(session.execute(text("SELECT id, user_id, started_at FROM 'training_session'")))
 
-    assert rows == [(1,1,str(current_time))]
+    assert rows == [(id,user_id,str(current_time))]
 
 
 
 def test_mapper_can_load_sets(session):
     
     # Create new user
-    new_user = model.User(1 , phone_number="+34600000000")
+    new_user = model.User(phone_number="+34600000000")
     session.add(new_user)
+    user_id = new_user.id
     session.commit()
 
     # Create new training_session:
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(1, current_time)
-    session.add(new_training_session)
+    new_training_session = model.TrainingSession(current_time)
+    training_session_id = new_training_session.id
+    new_user.add_training_session(new_training_session)
     session.commit()
 
 
@@ -134,12 +146,12 @@ def test_mapper_can_save_sets(session):
     event.listen(session.bind, 'before_cursor_execute', on_sql)
 
     # Your existing test code
-    new_user = model.User(1 , phone_number="+34600000000")
+    new_user = model.User(phone_number="+34600000000")
     session.add(new_user)
     session.commit()
 
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(1,  current_time)
+    new_training_session = model.TrainingSession(current_time)
     new_user.add_training_session(new_training_session)
     session.commit()
 
@@ -158,4 +170,4 @@ def test_mapper_can_save_sets(session):
 
     rows = list(session.execute(text("SELECT session_id, exercise, series, repetition, kg, distance, mean_velocity, peak_velocity, power, rir FROM sets")))
 
-    assert rows == [(1,'Press Banca', 1, 1,  214.3, 1.03, 0.24, 1.3, 100, 1)]
+    assert rows == [(new_training_session.id,'Press Banca', 1, 1,  214.3, 1.03, 0.24, 1.3, 100, 1)]

@@ -12,7 +12,7 @@ mapper_registry = registry()
 
 user = Table('user',
               mapper_registry.metadata,
-              Column('id', Integer, primary_key=True, autoincrement = True),
+              Column('id', String(36), primary_key=True),
               Column('phone_number', String(15)),
               Column('name', String(255), nullable=True),
               Column('surname', String(255), nullable=True),
@@ -29,7 +29,7 @@ user = Table('user',
 
 training_session = Table('training_session',
                          mapper_registry.metadata,
-                         Column('id', Integer, primary_key=True, autoincrement=True),
+                         Column('id', String(36), primary_key=True),
                          Column('user_id', Integer, ForeignKey('user.id')),
                          Column('status', String),
                          Column('started_at',DateTime),

@@ -3,12 +3,13 @@ import models.models as model
 import orm.repository as repository
 from datetime import datetime
 from sqlalchemy import text
+import uuid
 
-def test_user_repository_can_save_user(session):
+def test_repository_can_save_user(session):
 
     # Prepare
-    new_user = model.User(1,'+34545222123','Jose')
-    user_repo = repository.UserSqlAlchemyRepository(session)
+    new_user = model.User('+34545222123','Jose')
+    user_repo = repository.SqlAlchemyRepository(session)
 
     # Function to assess
     user_repo.add(new_user)
@@ -17,37 +18,34 @@ def test_user_repository_can_save_user(session):
     # SQL to get info
     rows = session.execute(text("SELECT id, phone_number, name FROM user"))
 
-    assert list(rows) == [(1,'+34545222123','Jose')]
+    assert list(rows) == [(new_user.id,'+34545222123','Jose')]
 
 
 def insert_user(session):
-    session.execute(text("INSERT INTO user (phone_number, name) "
-                         "VALUES ('+34635805355', 'Jose')"))
-    [[user_id]] = session.execute(text("SELECT id FROM user WHERE phone_number=:phone_number AND name=:name"), {"phone_number": "+34635805355", "name":"Jose"})
-
-    print(user_id)
+    user_id = str(uuid.uuid4())
+    session.execute(
+        text("INSERT INTO user (id, phone_number, name) VALUES (:id, :phone, :name)"),
+        {"id": user_id, "phone": "+34635805355", "name": "Jose"}
+    )
     return user_id
 
-
 def insert_training_session(session, user_id):
+    training_session_id = str(uuid.uuid4())
+
     session.execute(
     text(
-        "INSERT INTO training_session (user_id,status,started_at,modified_at) "
-        "VALUES (:user_id,  :status, :started_at, :modified_at)"
+        "INSERT INTO training_session (id, user_id, status, started_at, modified_at) "
+        "VALUES (:id, :user_id, :status, :started_at, :modified_at)"
     ),
     {
+        "id": training_session_id,
         "user_id": user_id,
         "status": "In progress",
         "started_at": datetime.now(),
         "modified_at": datetime.now()
     }
-        )
-    
-    [[training_session_id]] = session.execute(text("SELECT id FROM trianing_session WHERE user_id = :user_id AND status = :status"), 
-                                             {
-                                                "user_id": user_id,
-                                                "status": "In progress"
-                                            } )
+)
+
     
     return training_session_id
 
@@ -75,8 +73,11 @@ def insert_set(session, training_session_id):
     return set_id
 
 
-def test_training_repository_can_save_training_session(session):
+def test_repository_can_retrieve_user_with_training_sessions(session):
 
     user_id = insert_user(session)
+    training_session_id = insert_training_session(session, user_id)
+    set_id = insert_set(session, training_session_id)
 
-    training_session = model.TrainingSession
+    repo = repository.SqlAlchemyRepository(session)
+    retrieved = repo.get
