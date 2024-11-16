@@ -1,5 +1,5 @@
 import pytest
-import models.models as model
+import src.training_sessions.domain.models as model
 from sqlalchemy import text, event
 from datetime import datetime
 

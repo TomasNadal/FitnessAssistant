@@ -1,6 +1,6 @@
 from datetime import datetime, date, timedelta
 import pytest
-from models.models import add_set, User, TrainingSession, Set
+from src.training_sessions.domain.models import add_set, User, TrainingSession, Set
 
 now = datetime.now()
 yesterday = now - timedelta(days=1)

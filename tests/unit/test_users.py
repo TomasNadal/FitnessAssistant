@@ -1,5 +1,5 @@
 import pytest
-from models.models import TrainingSession,User,Set
+from src.training_sessions.domain.models import TrainingSession,User,Set
 
 
 

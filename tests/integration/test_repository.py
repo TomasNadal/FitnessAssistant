@@ -1,6 +1,6 @@
 import pytest
-import models.models as model
-import orm.repository as repository
+import src.training_sessions.domain.models as model
+import src.training_sessions.adapters.repository as repository
 from datetime import datetime
 from sqlalchemy import text
 import uuid
@@ -87,5 +87,5 @@ def test_repository_can_retrieve_user_with_training_sessions(session):
 
     assert expected == retrieved
     assert retrieved.training_sessions[0].id == training_session_id
-    
+
 

@@ -1,13 +1,24 @@
 from __future__ import annotations
 from typing import Optional, List
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
-
+import logging
 
 class NotActiveSessions(Exception):
     pass
 
+
+def get_current_training_session(training_sessions: List[TrainingSession]) -> TrainingSession:
+    try:
+        latest_session = next(t for t in sorted(training_sessions, reverse=True) 
+                            if t.is_active() and 
+                            (datetime.now() - t.modified_at) < timedelta(hours=4))
+        return latest_session
+    except StopIteration:
+        raise NotActiveSessions
+    except TypeError:
+        raise NotActiveSessions
 
 
 def add_set(set: Set, training_sessions: List[TrainingSession]) -> int:
@@ -41,8 +52,8 @@ class TrainingSession:
         self.id = str(uuid.uuid4())  
         self.started_at = started_at
         self.sets = set()
-        self._status = 'In progress'
-        self._modified_at = started_at
+        self.status = 'In progress'
+        self.modified_at = self.started_at
         
     def __eq__(self,other):
         if not isinstance(other, TrainingSession):
@@ -58,17 +69,21 @@ class TrainingSession:
         return self.started_at > other.started_at
 
     def is_active(self):
-        return self._status == 'In progress'
+        return self.status == 'In progress'
     
     def add_set(self, set: Set):        
         self.sets.add(set)
+        self.modified_at = datetime.now()
 
     def end(self):
-        if self._status == 'Completed':
+        if self.status == 'Completed':
             raise ValueError('Session is completed')
         
-        self._status = 'Completed'
+        self.status = 'Completed'
+        self.modified_at = datetime.now()
 
+    def __str__(self):
+        return f'{self.id}-{self.started_at}-{self.modified_at}-{self.sets}'
 
         
 class User:
@@ -105,6 +120,5 @@ class User:
     def __hash__(self):
         return hash(self.id)
     
-
     def add_training_session(self, training_session: TrainingSession):
         self.training_sessions.append(training_session)

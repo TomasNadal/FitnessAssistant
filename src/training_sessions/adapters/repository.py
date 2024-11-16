@@ -1,11 +1,11 @@
-import models.models as model
+import src.training_sessions.domain.models as model
 import abc
 
 # They mention in the book that they use Abstract class to 
 # explain what the interface for the repository is, usually
 # in production this ends up not-maintained and just
 # rely on duck typing
-class UserAbstractRepository(abc.ABC):
+class AbstractRepository(abc.ABC):
     @abc.abstractmethod
     def add(self, user: model.User):
         raise NotImplementedError
@@ -15,7 +15,7 @@ class UserAbstractRepository(abc.ABC):
         raise NotImplementedError
 
 
-class SqlAlchemyRepository(UserAbstractRepository):
+class SqlAlchemyRepository(AbstractRepository):
     def __init__(self, session):
         self.session = session
 

@@ -1,0 +1,27 @@
+version: "1"
+services: 
+
+    app: #(1)
+        build:
+            context: .
+            dockerfile: dockerfile
+        depends_on:
+            - postgres
+        environment: #(3)
+            - DB_HOST=postgres #(4)
+            - DB_PASSWORD=training
+            - API_HOST=app
+            - PYTHONDONTWRITEBYTECODE=1 #(5)
+        volumes: #(6)
+            - ./src:/src
+            - ./tests:/tests
+        ports:
+            - "5005:80" #(7)
+
+    postgres:
+        image: postgres:16.5 #(2)
+        environment:
+            - POSTGRES_USER=training_session_user
+            - POSTGRES_PASSWORD=training_session_dev
+        ports:
+            - "34526:5432"

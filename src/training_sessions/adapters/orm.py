@@ -1,7 +1,7 @@
 from sqlalchemy import Table, MetaData, Column, Integer, String, Date, ForeignKey, Float, DateTime
 from sqlalchemy.orm import registry,  relationship
 
-import models.models as model
+import src.training_sessions.domain.models as model
 
 # This mapping style is the classical ("imperative") way
 
@@ -30,7 +30,7 @@ user = Table('user',
 training_session = Table('training_session',
                          mapper_registry.metadata,
                          Column('id', String(36), primary_key=True),
-                         Column('user_id', Integer, ForeignKey('user.id')),
+                         Column('user_id', String(36), ForeignKey('user.id')),
                          Column('status', String),
                          Column('started_at',DateTime),
                          Column('modified_at',DateTime) 
@@ -39,7 +39,7 @@ training_session = Table('training_session',
 sets = Table('sets', 
              mapper_registry.metadata,
              Column("id", Integer, primary_key=True, autoincrement=True),
-             Column('session_id', Integer, ForeignKey('training_session.id')),
+             Column('session_id', String(36), ForeignKey('training_session.id')),
              Column('exercise', String(255)),
              Column('series', Integer),
              Column('repetition',Integer),

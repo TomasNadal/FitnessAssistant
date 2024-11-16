@@ -1,10 +1,17 @@
+import time
+from pathlib import Path
+
 import pytest
 from sqlalchemy import create_engine
+import requests
+from requests.exceptions import ConnectionError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, clear_mappers
-from models.models import User, TrainingSession, Set
+from src.training_sessions.domain.models import User, TrainingSession, Set
 from datetime import datetime, timedelta
 
-from orm.orm import mapper_registry, start_mappers
+from src.training_sessions.adapters.orm import mapper_registry, start_mappers, registry
+import src.training_sessions.config as config
 
 
 @pytest.fixture
@@ -18,6 +25,15 @@ def session(in_memory_db):
     start_mappers()
     yield sessionmaker(bind=in_memory_db)()
     clear_mappers()
+
+@pytest.fixture
+def sample_json_payload():
+    return {'from':'+34645353526', 'set':{'exercise':'Press Banca',
+        'series':1,
+        'repetition': 1,
+        'kg': 123}}
+
+
 
 
 
@@ -67,3 +83,51 @@ def sample_set(sample_training_session):
 
     return next(iter(sample_training_session.sets))
     
+
+
+def wait_for_postgres_to_come_up(engine):
+    deadline = time.time() + 10
+    while time.time() < deadline:
+        try:
+            return engine.connect()
+        except OperationalError:
+            time.sleep(0.5)
+
+    pytest.fail("Postgres never came up")
+
+
+def wait_for_webapp_to_come_up():
+    deadline = time.time() + 10
+    url = config.get_api_url()
+    while time.time() < deadline:
+        try:
+            return requests.get(url)
+        except ConnectionError:
+            time.sleep(0.5)
+    pytest.fail("API never came up")
+
+
+
+@pytest.fixture(scope="session")
+def postgres_db():
+    db_uri = config.get_postgres_uri()
+    print(db_uri)
+    engine = create_engine(db_uri)
+
+    wait_for_postgres_to_come_up(engine)
+    mapper_registry.metadata.create_all(engine)
+    return engine
+    
+
+@pytest.fixture
+def postgres_session(postgres_db):
+    start_mappers()
+    yield sessionmaker(bind = postgres_db)()
+    clear_mappers()
+
+@pytest.fixture
+def restart_api():
+    (Path(__file__).parent.parent / "src/training_sessions/entrypoints/flask_app.py").touch()
+
+    time.sleep(0.5)
+    wait_for_webapp_to_come_up()
