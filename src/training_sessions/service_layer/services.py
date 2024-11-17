@@ -36,8 +36,8 @@ def get_or_create_training_session(phone_number: str, repo: AbstractRepository, 
         return user,new_training_session
 
 def add_set(phone_number: str, set_data: dict, repo: AbstractRepository, session, ):
-
-    set = model.Set(**set_data)
+    for set_info in set_data:
+        set = model.Set(**set_info)
     user = get_or_create_user(phone_number,repo,session)
     user, new_training_session = get_or_create_training_session(phone_number, repo, session)
     training_session_id = model.add_set(set, user.training_sessions)

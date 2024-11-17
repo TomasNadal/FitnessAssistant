@@ -19,7 +19,12 @@ def test_add_set_to_most_recent_session(sample_user, sample_set):
     assert now == sorted(training_sessions, reverse=True)[0].started_at
 
 
-def test_add_set_returns_training_session_id(list_of_training_sessions, sample_set):
-    session_id = add_set(sample_set,list_of_training_sessions)
+def test_add_set_returns_training_session_id(sample_user, list_of_training_sessions, sample_set):
+    now_time = datetime.now()
+    sample_user.add_training_session(TrainingSession(started_at=now_time))
+    assert sample_user.training_sessions[-1].started_at == now_time
+    assert sample_user.training_sessions[-1].status == "In progress"
 
-    assert session_id == sorted(list_of_training_sessions, reverse=True)[0].id
+    session_id = add_set(sample_set,sample_user.training_sessions)
+
+    assert session_id == sorted(sample_user.training_sessions, reverse=True)[0].id

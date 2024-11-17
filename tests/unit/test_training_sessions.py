@@ -14,6 +14,7 @@ def test_create_training_session(sample_user):
     assert len(sample_user.training_sessions) == 1
     assert training_session.started_at == started_at
     assert training_session.modified_at == started_at
+    assert training_session.modified_at != None
     assert training_session.status == "In progress"
     assert training_session.sets == set()
 
@@ -46,21 +47,6 @@ def test_create_series():
     assert set.mean_velocity == mean_velocity
     assert set.peak_velocity == peak_velocity
     assert set.power == power
-
-
-def test_create_and_add_training_session_(sample_user):
-    started_at = datetime.now()
-    status = 'In progress'
-
-    training_session = TrainingSession(started_at = started_at)
-
-    sample_user.add_training_session(training_session)
-
-    assert sample_user.training_sessions == [training_session]
-    added_session = sample_user.training_sessions[0]
-    assert training_session.started_at == started_at
-    assert training_session.status == "In progress"
-    assert training_session.sets == set()
 
 
 def test_add_set_to_session(sample_user, sample_set,sample_training_session):

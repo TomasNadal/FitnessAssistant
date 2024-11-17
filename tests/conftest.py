@@ -28,10 +28,10 @@ def session(in_memory_db):
 
 @pytest.fixture
 def sample_json_payload():
-    return {'from':'+34645353526', 'set':{'exercise':'Press Banca',
+    return {'from':'+34645353526', 'set':[{'exercise':'Press Banca',
         'series':1,
         'repetition': 1,
-        'kg': 123}}
+        'kg': 123}]}
 
 
 

@@ -34,6 +34,8 @@ def post_to_create_training_session(phone_number):
     assert r.json()["session_id"] is not None
 
     return r.json()["session_id"]
+
+
 @pytest.mark.usefixtures("postgres_db")
 @pytest.mark.usefixtures("restart_api")
 def test_happy_path_returns_201_and_allocated_set():

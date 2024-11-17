@@ -17,8 +17,7 @@ def get_current_training_session(training_sessions: List[TrainingSession]) -> Tr
         return latest_session
     except StopIteration:
         raise NotActiveSessions
-    except TypeError:
-        raise NotActiveSessions
+
 
 
 def add_set(set: Set, training_sessions: List[TrainingSession]) -> int:
@@ -120,5 +119,9 @@ class User:
     def __hash__(self):
         return hash(self.id)
     
+    # Temporally I will add here logic to end previous session
     def add_training_session(self, training_session: TrainingSession):
+        if len(self.training_sessions) > 0:
+            self.training_sessions[-1].end()
+            
         self.training_sessions.append(training_session)
