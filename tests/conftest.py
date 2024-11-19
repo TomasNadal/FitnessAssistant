@@ -142,15 +142,15 @@ def valid_csv_adrencoder_path():
 def invalid_csv_adrencoder_path():
     adr_path = Path(__file__).parent / "fixtures" / "adrencoder_invalid.csv"
     return adr_path
-
-''' 
-from fixtures.payloads import (
+ 
+from tests.fixtures.payloads import (
     VALID_STATUS_UPDATE_PAYLOAD,
     VALID_TEXT_MESSAGE_PAYLOAD,
     VALID_DOCUMENT_MESSAGE_PAYLOAD,
     INVALID_MESSAGE_PAYLOAD,
     INTERACTIVE_LIST_SEND_PAYLOAD,
-    VALID_LIST_REPLY
+    VALID_LIST_REPLY,
+    DOCUMENT_MESSAGE
 )
 
 # Define Test Payloads
@@ -177,5 +177,7 @@ def valid_document_message_payload():
 @pytest.fixture
 def invalid_message_payload():
     return INVALID_MESSAGE_PAYLOAD
-'''
 
+@pytest.fixture
+def document_message_part():
+    return DOCUMENT_MESSAGE

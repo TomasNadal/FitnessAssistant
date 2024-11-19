@@ -1,9 +1,11 @@
 from __future__ import annotations
-from typing import Optional
+import typing
 from datetime import datetime, timedelta
 
 import src.training_sessions.domain.models as model
 from src.training_sessions.adapters.repository import AbstractRepository
+from src.training_sessions.adapters.whatsapp_api import WhatsappClient
+from src.training_sessions.adapters.sets_parser import CSVParser
 
 '''
 Here should go the Orchestration Logic
@@ -35,12 +37,33 @@ def get_or_create_training_session(phone_number: str, repo: AbstractRepository, 
         session.commit()
         return user,new_training_session
 
-def add_set(phone_number: str, set_data: dict, repo: AbstractRepository, session, ):
-    for set_info in set_data:
-        set = model.Set(**set_info)
+
+def add_sets(phone_number: str, set_data: typing.Set[model.Set], repo: AbstractRepository, session, ):
     user = get_or_create_user(phone_number,repo,session)
     user, new_training_session = get_or_create_training_session(phone_number, repo, session)
-    training_session_id = model.add_set(set, user.training_sessions)
+    for set in set_data:
+        training_session_id = model.add_set(set, user.training_sessions)
+
     session.commit()
 
     return training_session_id
+
+
+def add_sets_from_raw(payload: dict, repo: AbstractRepository, api: WhatsappClient, session) -> dict:
+    parser = CSVParser()
+
+    phone_number = payload["from"]
+    message_type = payload["type"]
+
+    if message_type=="document":
+        document = payload[message_type]
+        file_path = api.download_media(document["filename"], document["id"])
+        training_dataframe = parser.from_file_to_dataframe(file_path)
+        training_sets = parser.parse_to_sets(training_dataframe)
+
+        training_session_id = add_sets(phone_number, training_sets, repo, session)
+
+        return training_session_id
+    
+    else:
+        pass

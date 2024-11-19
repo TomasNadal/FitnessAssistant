@@ -28,7 +28,7 @@ def random_set(phone_number, series_number):
 # session is created
 def post_to_create_training_session(phone_number):
     url = config.get_api_url()
-    r = requests.post(f'{url}/new_training_session', json={'phone_number':phone_number})
+    r = requests.post(f'{url}/add_training_session', json={'phone_number':phone_number})
 
     assert r.status_code == 201
     assert r.json()["session_id"] is not None
@@ -36,20 +36,20 @@ def post_to_create_training_session(phone_number):
     return r.json()["session_id"]
 
 
+
+
 @pytest.mark.usefixtures("postgres_db")
 @pytest.mark.usefixtures("restart_api")
-def test_happy_path_returns_201_and_allocated_set():
+def test_happy_path_returns_201_and_allocated_set(valid_document_message_payload):
     url = config.get_api_url()
+    expected_filename = "test_document.pdf"
+    expected_phone_number = '+34678383282'
+    session_id = post_to_create_training_session(expected_phone_number)
 
-    phone_number = '+34678383282'
-    sets = random_set(phone_number, 1)
-    session_id = post_to_create_training_session(phone_number)
-
-    for set in sets:
-        r = requests.post(f'{url}/add_set', json=set)
-        assert r.status_code == 201
-        assert r.json()["session_id"] == session_id
-
-
-
+    r = requests.post(f'{url}/add_set', json=valid_document_message_payload)
+    assert r.status_code == 201
+    assert r.json()["phone_number"] == expected_phone_number
+    assert r.json()["filename"] == expected_filename
+    assert r.json()["session_id"] == session_id
+    
 # Add here the unhappy path

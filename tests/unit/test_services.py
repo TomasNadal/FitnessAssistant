@@ -1,7 +1,11 @@
 import pytest
+import pandas
+from pathlib import Path
 from src.training_sessions.adapters import repository
+from src.training_sessions.adapters import whatsapp_api
 from src.training_sessions.service_layer import services
 import src.training_sessions.domain.models as model 
+import src.training_sessions.config as config
 
 
 class FakeRepository(repository.AbstractRepository):
@@ -67,5 +71,23 @@ def test_add_set(sample_json_payload):
     repo, session = FakeRepository([]), FakeSession()
 
     services.get_or_create_training_session('+34646383712', repo, session)
-    result = services.add_set(sample_json_payload['from'], sample_json_payload['set'], repo, session)
+    result = services.add_sets(sample_json_payload['from'], sample_json_payload['set'], repo, session)
     assert next(iter(repo.get(sample_json_payload['from']).training_sessions)).id == result
+
+
+# From raw_csv, should accept fi
+def test_add_sets_from_raw(document_message_part):
+    repo, session, api = FakeRepository([]), FakeSession(), whatsapp_api.WhatsappClient(**config.get_whatsapp_api_details())
+
+    result = services.add_sets_from_raw(document_message_part, repo, api, session)
+    assert next(iter(repo.get(document_message_part['from']).training_sessions)).id == result
+
+
+'''
+Should this functionality go in domain or service? Probs service
+since we need to check against commited sets, then decide and then commit (or not commit)
+5. See if the sets are already in training session
+6. If not, add them. If yes, pass
+
+'''
+

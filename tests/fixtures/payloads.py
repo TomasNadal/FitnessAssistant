@@ -109,7 +109,7 @@ VALID_DOCUMENT_MESSAGE_PAYLOAD = json.dumps({
                         ],
                         "messages": [
                             {
-                                "from": "15557654321",
+                                "from": "+34678383282",
                                 "id": "message_id_2",
                                 "timestamp": "1627773047",
                                 "type": "document",
@@ -127,7 +127,16 @@ VALID_DOCUMENT_MESSAGE_PAYLOAD = json.dumps({
         }
     ]
 })
-
+DOCUMENT_MESSAGE = {
+                      "from": "+34678383282",
+                      "id": "message_id_2",
+                      "timestamp": "1627773047",
+                      "type": "document",
+                      "document": {'filename': 'adrencoder.csv',
+                    'mime_type': 'text/comma-separated-values',
+                    'sha256': 'tw7aDnWyP2LqMxIkCO6oRnHhhWO3dCz/o+nScOWMm0c=',
+                    'id': '1090723159084267'}
+                  }
 
 # Valid List Reply Message: 
 VALID_LIST_REPLY = json.dumps({
@@ -278,3 +287,4 @@ INTERACTIVE_LIST_SEND_PAYLOAD = json.dumps({
     }
   }
 })
+
