@@ -131,3 +131,51 @@ def restart_api():
 
     time.sleep(0.5)
     wait_for_webapp_to_come_up()
+
+
+@pytest.fixture
+def valid_csv_adrencoder_path():
+    adr_path = Path(__file__).parent / "fixtures" / "adrencoder.csv"
+    return adr_path
+
+@pytest.fixture
+def invalid_csv_adrencoder_path():
+    adr_path = Path(__file__).parent / "fixtures" / "adrencoder_invalid.csv"
+    return adr_path
+
+''' 
+from fixtures.payloads import (
+    VALID_STATUS_UPDATE_PAYLOAD,
+    VALID_TEXT_MESSAGE_PAYLOAD,
+    VALID_DOCUMENT_MESSAGE_PAYLOAD,
+    INVALID_MESSAGE_PAYLOAD,
+    INTERACTIVE_LIST_SEND_PAYLOAD,
+    VALID_LIST_REPLY
+)
+
+# Define Test Payloads
+@pytest.fixture
+def valid_list_reply_payload():
+    return VALID_LIST_REPLY
+
+@pytest.fixture
+def interactive_send_payload():
+    return INTERACTIVE_LIST_SEND_PAYLOAD
+
+@pytest.fixture
+def valid_status_update_payload():
+    return VALID_STATUS_UPDATE_PAYLOAD
+
+@pytest.fixture
+def valid_text_message_payload():
+    return VALID_TEXT_MESSAGE_PAYLOAD
+
+@pytest.fixture
+def valid_document_message_payload():
+    return VALID_DOCUMENT_MESSAGE_PAYLOAD
+
+@pytest.fixture
+def invalid_message_payload():
+    return INVALID_MESSAGE_PAYLOAD
+'''
+
