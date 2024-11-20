@@ -79,6 +79,9 @@ class WhatsappClient:
         except ValueError:
             logging.error(f"Invalid JSON response while fetching media URL for media_id: {media_id}")
             return None
+        except AttributeError:
+            logging.error("Auth token expired")
+            return None
 
         # Second download the file
         file_response = requests.get(media_url, headers=self._get_headers() )

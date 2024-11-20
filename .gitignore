@@ -3,3 +3,6 @@
 .pytest_cache
 **/*.pyc
 .env
+adrencoder*.csv
+payloads.py
+*.ogg

@@ -69,10 +69,14 @@ def test_add_or_create_training_session_uses_existing_session():
 
 def test_add_set(sample_json_payload):
     repo, session = FakeRepository([]), FakeSession()
+    fake_sets = {model.Set(exercise="Banca", series=1,repetition=1,kg=1),model.Set(exercise="Banca", series=1,repetition=2,kg=1)}
 
     services.get_or_create_training_session('+34646383712', repo, session)
-    result = services.add_sets(sample_json_payload['from'], sample_json_payload['set'], repo, session)
-    assert next(iter(repo.get(sample_json_payload['from']).training_sessions)).id == result
+    result = services.add_sets(sample_json_payload['from'], fake_sets, repo, session)
+    
+    obtainted_training_session = next(iter(repo.get(sample_json_payload['from']).training_sessions))
+    assert obtainted_training_session.id == result
+    assert obtainted_training_session.sets == fake_sets
 
 
 # From raw_csv, should accept fi
@@ -83,11 +87,4 @@ def test_add_sets_from_raw(document_message_part):
     assert next(iter(repo.get(document_message_part['from']).training_sessions)).id == result
 
 
-'''
-Should this functionality go in domain or service? Probs service
-since we need to check against commited sets, then decide and then commit (or not commit)
-5. See if the sets are already in training session
-6. If not, add them. If yes, pass
-
-'''
 

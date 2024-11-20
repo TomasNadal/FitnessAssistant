@@ -40,7 +40,7 @@ def add_set():
 
     message_type = message["type"]
 
-    if message_type == "document":
+    if message_type == "document" or message_type == "audio":
         training_session_id = services.add_sets_from_raw(message, repo=repo, api=api, session=session)
 
 

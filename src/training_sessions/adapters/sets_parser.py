@@ -30,7 +30,7 @@ class CSVParser(AbstractTrainingDataParser):
             training_dataframe = pd.read_csv(file_path)
             return training_dataframe
         except Exception:
-            raise Exception
+            return None
 
     
     def isvalid(self, raw_data):    

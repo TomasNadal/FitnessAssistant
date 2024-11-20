@@ -41,7 +41,7 @@ def get_or_create_training_session(phone_number: str, repo: AbstractRepository, 
 def add_sets(phone_number: str, set_data: typing.Set[model.Set], repo: AbstractRepository, session, ):
     user = get_or_create_user(phone_number,repo,session)
     user, new_training_session = get_or_create_training_session(phone_number, repo, session)
-    for set in set_data:
+    for set in sorted(set_data, key = lambda x: (x.series, x.repetition)):
         training_session_id = model.add_set(set, user.training_sessions)
 
     session.commit()
@@ -64,6 +64,9 @@ def add_sets_from_raw(payload: dict, repo: AbstractRepository, api: WhatsappClie
         training_session_id = add_sets(phone_number, training_sets, repo, session)
 
         return training_session_id
-    
+    elif message_type=="audio":
+        audio = payload[message_type]
+        file_path = api.download_media("audio.ogg", audio["id"])
+
     else:
         pass
