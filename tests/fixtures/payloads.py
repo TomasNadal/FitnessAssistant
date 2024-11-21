@@ -138,6 +138,24 @@ DOCUMENT_MESSAGE = {
                     'id': '1090723159084267'}
                   }
 
+VALID_AUDIO_MESSAGE_PAYLOAD = {'object': 'whatsapp_business_account',
+                                'entry': 
+                                  [
+                                      {'id': '403306869533174', 
+                                       'changes': 
+                                       [{'value': 
+                                         {'messaging_product': 'whatsapp', 
+                                          'metadata': {'display_phone_number': '15551001128', 'phone_number_id': '344979068708992'}, 
+                                          'contacts': [{'profile': {'name': 'Santi'}, 'wa_id': '34635805355'}], 
+                                          'messages': [{'from': '34635805355',
+                                                        'id': 'wamid.HBgLMzQ2MzU4MDUzNTUVAgASGCA4Qjg1QzU4QUEwRjU4N0EzREY4OTVENEQzM0U3MEJEMAA=', 
+                                                        'timestamp': '1732109381',
+                                                        'type': 'audio',
+                                                        'audio': {'mime_type': 'audio/ogg; codecs=opus',
+                                                                  'sha256': 'VUaxAkFPNZizzV/QGLsG1RPAxTY3VzQorldxSAV+Glg=',
+                                                                  'id': '1800761753789620', 'voice': True}}]}, 'field': 'messages'}]}]}
+
+
 # Valid List Reply Message: 
 VALID_LIST_REPLY = json.dumps({
   "object": "whatsapp_business_account",

@@ -7,6 +7,7 @@ from src.training_sessions.adapters.repository import AbstractRepository
 from src.training_sessions.adapters.whatsapp_api import WhatsappClient
 from src.training_sessions.adapters.sets_parser import CSVParser
 
+from pydub import AudioSegment
 '''
 Here should go the Orchestration Logic
 - Fetching objects from the domain model
@@ -58,7 +59,7 @@ def add_sets_from_raw(payload: dict, repo: AbstractRepository, api: WhatsappClie
     if message_type=="document":
         document = payload[message_type]
         file_path = api.download_media(document["filename"], document["id"])
-        training_dataframe = parser.from_file_to_dataframe(file_path)
+        training_dataframe = parser.from_raw_to_dataframe(file_path)
         training_sets = parser.parse_to_sets(training_dataframe)
 
         training_session_id = add_sets(phone_number, training_sets, repo, session)
@@ -66,7 +67,12 @@ def add_sets_from_raw(payload: dict, repo: AbstractRepository, api: WhatsappClie
         return training_session_id
     elif message_type=="audio":
         audio = payload[message_type]
-        file_path = api.download_media("audio.ogg", audio["id"])
+        file_path_ogg = api.download_media("audio.ogg", audio["id"])
+
+        sound = AudioSegment.from_ogg(file_path_ogg)
+        file_path_mp3 = file_path_ogg.with_suffix('.mp3')
+        sound.export(file_path_mp3, format="mp3")
+
 
     else:
         pass

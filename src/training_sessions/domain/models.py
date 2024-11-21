@@ -41,7 +41,7 @@ class Set:
     mean_velocity: Optional[float]= None
     peak_velocity: Optional[float]= None
     power: Optional[float]= None
-    rir: Optional[float]= None
+    rir: Optional[int]= None
 
 
 

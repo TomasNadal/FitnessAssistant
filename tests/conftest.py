@@ -34,7 +34,9 @@ def sample_json_payload():
         'kg': 123}]}
 
 
-
+@pytest.fixture
+def test_data_folder():
+    return Path(__file__).parent / "fixtures"
 
 
 @pytest.fixture

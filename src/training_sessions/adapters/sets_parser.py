@@ -3,33 +3,45 @@ import typing
 import pandas as pd
 from pathlib import Path
 from src.training_sessions.domain.models import Set
-import re
+from src.training_sessions.domain.openai_schemas import TextParserResponse
+import src.training_sessions.config as config
+import json
 
-class InvalidCSVFormat(Exception):
+import re
+from openai import OpenAI
+
+class InvalidMedia(Exception):
+    pass
+
+class MissingInformation(Exception):
     pass
 
 class AbstractTrainingDataParser(abc.ABC):
     
     @abc.abstractmethod
-    def from_file_to_dataframe(self, file_path: Path) -> pd.DataFrame:
+    def from_raw_to_dataframe(self, file_path: typing.Optional[Path], text: typing.Optional[str]) -> pd.DataFrame:
         pass
     
     @abc.abstractmethod
-    def isvalid(self, raw_data: pd.DataFrame) -> bool:
+    def isvalid(self, raw_data: pd.DataFrame | dict) -> bool:
         pass
 
     @abc.abstractmethod
     def parse_to_sets(self, raw_data: pd.DataFrame) -> typing.Set[typing.Set]:
         pass
 
+    @abc.abstractmethod
+    def parse_to_sets_from_raw(self, file_path: typing.Optional[Path], text: typing.Optional[str]) -> pd.DataFrame:
+        pass
 
 
 class CSVParser(AbstractTrainingDataParser):
-    def from_file_to_dataframe(self, file_path):
+    def from_raw_to_dataframe(self, file_path):
+        
         try:
             training_dataframe = pd.read_csv(file_path)
             return training_dataframe
-        except Exception:
+        except InvalidMedia:
             return None
 
     
@@ -74,4 +86,65 @@ class CSVParser(AbstractTrainingDataParser):
 
             return set_of_sets
         else:
-            raise InvalidCSVFormat
+            raise InvalidMedia
+        
+    def parse_to_sets_from_raw(self, file_path):
+        
+        raw_dataframe = self.from_raw_to_dataframe(file_path=file_path)
+        set_of_sets = self.parse_to_sets(raw_dataframe)
+
+        return set_of_sets
+    
+
+class TextParser:
+    def __init__(self):
+        self.client = OpenAI()
+        self.config = config.get_text_parser_details()
+
+    def from_text_to_json(self, text):
+        completion = self.client.beta.chat.completions.parse(
+            model = self.config["model"],
+            messages = [
+                {
+                    "role": "system", 
+                    "content": self.config["system_prompt"]
+                },
+                {
+                    "role": "user", 
+                    "content": text
+                }
+            ],
+            response_format=self.config["schema"]
+
+        )
+
+        return json.loads(completion.choices[0].message.content)
+        
+        
+    def isvalid(self, raw_data: dict) -> bool:
+        expected_keys = [('exercise',""), ('series',-1), ('repetition',-1), ('kg',-1), ('rir',-1)]
+        for key, value in expected_keys:
+            if not key in raw_data:
+                return False
+            elif (raw_data[key] == value) and not (key == "rir"):
+                return False
+        return True
+
+
+    def from_raw_to_dataframe(self, file_path: typing.Optional[Path], text: typing.Optional[str]) -> pd.DataFrame:
+        pass
+
+    
+    def parse_to_sets(self, raw_data: pd.DataFrame) -> typing.Set[typing.Set]:
+        pass
+
+    
+    def parse_to_sets_from_raw(self, file_path: typing.Optional[Path], text: typing.Optional[str]) -> pd.DataFrame:
+        pass
+
+
+
+
+        
+
+
