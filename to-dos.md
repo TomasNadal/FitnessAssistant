@@ -1,2 +1,4 @@
 - Testing of Whatsapp Interactions. Will need to fake the dependencies.
-- 
+- Set of standard audios to test transcriber against
+- Set of standard transcripted text to test TextParser 
+- List of training exercises so that I only add validated exercises (i.e Press Banca and Press de Banca are mapped to the same exercise)
