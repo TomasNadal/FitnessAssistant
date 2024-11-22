@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import src.training_sessions.domain.models as model
 from src.training_sessions.adapters.repository import AbstractRepository
 from src.training_sessions.adapters.whatsapp_api import WhatsappClient
-from training_sessions.domain.sets_parser import CSVParser
+from src.training_sessions.domain.sets_parser import CSVFileParser
 
 from pydub import AudioSegment
 '''
@@ -51,7 +51,7 @@ def add_sets(phone_number: str, set_data: typing.Set[model.Set], repo: AbstractR
 
 
 def add_sets_from_raw(payload: dict, repo: AbstractRepository, api: WhatsappClient, session) -> dict:
-    parser = CSVParser()
+    parser = CSVFileParser()
 
     phone_number = payload["from"]
     message_type = payload["type"]
@@ -59,8 +59,7 @@ def add_sets_from_raw(payload: dict, repo: AbstractRepository, api: WhatsappClie
     if message_type=="document":
         document = payload[message_type]
         file_path = api.download_media(document["filename"], document["id"])
-        training_dataframe = parser.from_raw_to_dataframe(file_path)
-        training_sets = parser.parse_to_sets(training_dataframe)
+        training_sets = parser.parse(file_path)
 
         training_session_id = add_sets(phone_number, training_sets, repo, session)
 
