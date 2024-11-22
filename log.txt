@@ -1,0 +1,1 @@
+{"exercise":"press de banca","series":1,"repetition":2,"kg":100.0,"rir":0}

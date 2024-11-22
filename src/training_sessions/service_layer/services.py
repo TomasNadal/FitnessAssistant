@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import src.training_sessions.domain.models as model
 from src.training_sessions.adapters.repository import AbstractRepository
 from src.training_sessions.adapters.whatsapp_api import WhatsappClient
-from src.training_sessions.adapters.sets_parser import CSVParser
+from training_sessions.domain.sets_parser import CSVParser
 
 from pydub import AudioSegment
 '''

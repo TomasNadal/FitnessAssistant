@@ -8,6 +8,11 @@ import logging
 class NotActiveSessions(Exception):
     pass
 
+class MissingSetInformation(Exception):
+    def __init__(self, missing_fields: list[str]):
+        self.missing_fields = missing_fields
+        super().__init__(f"Missing required fields: {', '.join(missing_fields)}")
+
 
 def get_current_training_session(training_sessions: List[TrainingSession]) -> TrainingSession:
     try:
@@ -42,6 +47,23 @@ class Set:
     peak_velocity: Optional[float]= None
     power: Optional[float]= None
     rir: Optional[int]= None
+
+    def validate(self) -> None:
+        missing_fields = []
+        required_fields = ['exercise', 'series', 'repetition', 'kg']
+
+        # Weird validation because of how openai API handles None values
+        for field in required_fields:
+            value = getattr(self, field)
+            if (value is None or 
+                (isinstance(value, str) and value == "") or
+                (isinstance(value, (int, float)) and value == -1)):
+                missing_fields.append(field)
+            
+        if missing_fields:
+            raise MissingSetInformation(missing_fields)
+
+
 
 
 

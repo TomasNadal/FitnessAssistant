@@ -49,6 +49,14 @@ Reglas:
  * series/repetition/rir: -1
  * kg: -1.0
 
+Algunos ejercicios pueden realizarse con diferentes materiales o equipamiento. En estos casos, el material debe mantenerse como parte del nombre normalizado del ejercicio. Por ejemplo:
+    'curl biceps con mancuernas' → 'curl biceps mancuernas'
+    'curl biceps con barra' → 'curl biceps barra'
+    'press banca con barra' → 'press banca barra'
+    'press banca con mancuernas' → 'press banca mancuernas'
+
+Si no se especifica el material, se debe usar la versión base del ejercicio (por ejemplo, 'curl biceps' o 'press banca').
+
 Ejemplos:
 
 "press cuarta serie con 80kg al fallo"
