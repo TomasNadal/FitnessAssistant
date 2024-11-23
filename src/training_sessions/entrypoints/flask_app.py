@@ -2,7 +2,7 @@ from flask import Flask, request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-
+from src.training_sessions.domain.sets_parser import InvalidTrainingData
 import src.training_sessions.adapters.orm as orm
 import src.training_sessions.adapters.repository as repository
 import src.training_sessions.adapters.whatsapp_api as whastapp_api
@@ -36,12 +36,21 @@ def add_set():
 
     r = request.get_json()
     
-    message =  r["entry"][0]["changes"][0]["value"]["messages"][0]
+    messages = r["entry"][0]["changes"][0]["value"].get("messages")
+    print(messages)
+    if messages:
+        message = messages[0]
+        print(f'This is the message {message}')
+    else:
+        return "OK", 201
 
     message_type = message["type"]
 
-    if message_type == "document" or message_type == "audio":
-        training_session_id = services.add_sets_from_raw(message, repo=repo, api=api, session=session)
+    if message_type == "document" or message_type == "audio" or message_type == "text":
+        try:
+            training_session_id = services.add_sets_from_raw(message, repo=repo, api=api, session=session)
+        except InvalidTrainingData:
+            return "NOT OK", 200
 
 
 

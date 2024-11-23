@@ -5,6 +5,7 @@ import logging
 from dataclasses import asdict
 from flask import jsonify, request
 from functools import wraps
+import src.training_sessions.config as config
 import logging
 import datetime
 import pathlib
@@ -111,8 +112,14 @@ class WhatsappClient:
 
 
 
-        
-        
+    def send_text_message(self, phone_number: str, message: str) ->  requests.Response:
+        message_payload = config.get_text_message_payload(phone_number= phone_number, text = message)
+    
+        relative_url = f'{self.phone_number_id}/messages'
+
+        response = self._post_request(relative_url=relative_url, payload=message_payload)
+
+        return response
 
     '''
     Security related functions  

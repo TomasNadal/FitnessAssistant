@@ -122,9 +122,16 @@ def postgres_db():
     
 
 @pytest.fixture
-def postgres_session(postgres_db):
+def session_factory_in_memory(in_memory_db):
     start_mappers()
-    yield sessionmaker(bind = postgres_db)()
+    yield sessionmaker(bind = in_memory_db)
+    clear_mappers()
+
+
+@pytest.fixture
+def session_factory(postgres_db):
+    start_mappers()
+    yield sessionmaker(bind = postgres_db)
     clear_mappers()
 
 @pytest.fixture

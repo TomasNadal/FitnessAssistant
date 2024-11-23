@@ -7,6 +7,13 @@ def get_postgres_uri():
     user, db_name = "training_session_user", "training_sessions_dev"
     return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
 
+def get_postgres_uri_prod():
+    host = os.environ.get("DB_HOST", "172.30.48.1")
+    port = 34526 if host == "172.30.48.1" else 5432
+    password = os.environ.get("DB_PASSWORD", "training")
+    user, db_name = "training_session_user", "training_sessions_prod"
+    return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+
 def get_whatsapp_api_details():
     access_token = os.environ.get("ACCESS_TOKEN", "")
     api_version = os.environ.get("VERSION", "")
@@ -116,3 +123,16 @@ Ejemplos:
 
     return {"model":model, "system_prompt":system_prompt, "schema":schema}
 
+def get_text_message_payload(phone_number, text):
+    message_payload = {
+      "messaging_product": "whatsapp",
+      "recipient_type": "individual",
+      "to": phone_number,
+      "type": "text",
+      "text": {
+        "preview_url": False,
+        "body":  text
+        }
+    }
+
+    return message_payload

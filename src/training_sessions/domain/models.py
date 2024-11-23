@@ -23,6 +23,9 @@ def get_current_training_session(training_sessions: List[TrainingSession]) -> Tr
     except StopIteration:
         raise NotActiveSessions
 
+def get_current_series(exercise: str, training_session: TrainingSession) -> int:
+    
+    
 
 
 def add_set(set: Set, training_sessions: List[TrainingSession]) -> int:
@@ -39,9 +42,9 @@ def add_set(set: Set, training_sessions: List[TrainingSession]) -> int:
 @dataclass(unsafe_hash=True)
 class Set:
     exercise: str
-    series: int
     repetition: int
     kg: float
+    series: Optional[int]
     distance: Optional[float] = None
     mean_velocity: Optional[float]= None
     peak_velocity: Optional[float]= None
@@ -50,7 +53,7 @@ class Set:
 
     def validate(self) -> None:
         missing_fields = []
-        required_fields = ['exercise', 'series', 'repetition', 'kg']
+        required_fields = ['exercise', 'repetition', 'kg']
 
         # Weird validation because of how openai API handles None values
         for field in required_fields:
