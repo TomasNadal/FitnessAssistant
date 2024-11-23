@@ -22,9 +22,7 @@ def get_current_training_session(training_sessions: List[TrainingSession]) -> Tr
         return latest_session
     except StopIteration:
         raise NotActiveSessions
-
-def get_current_series(exercise: str, training_session: TrainingSession) -> int:
-    
+   
     
 
 
@@ -67,6 +65,12 @@ class Set:
             raise MissingSetInformation(missing_fields)
 
 
+
+class Exercise:
+    def __init__(self, name: str):
+        self.name = name
+        self.series = []
+        
 
 
 
