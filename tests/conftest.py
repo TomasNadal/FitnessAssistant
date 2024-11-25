@@ -7,7 +7,7 @@ import requests
 from requests.exceptions import ConnectionError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, clear_mappers
-from src.training_sessions.domain.models import User, TrainingSession, Set
+from src.training_sessions.domain.models import User, TrainingSession, Exercise, Series, Repetition
 from datetime import datetime, timedelta
 
 from src.training_sessions.adapters.orm import mapper_registry, start_mappers, registry
@@ -68,22 +68,6 @@ def list_of_training_sessions(sample_user):
 
     return list_of_training
 
-
-
-@pytest.fixture
-def sample_set(sample_training_session):
-    sample_training_session.add_set(Set(
-        exercise="Press Banca",
-        series=1,
-        repetition=1,
-        kg=104,
-        distance=0.41,
-        mean_velocity=0.21,
-        peak_velocity=0.8,
-        power=213
-    ))
-
-    return next(iter(sample_training_session.sets))
     
 
 

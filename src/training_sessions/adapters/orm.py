@@ -1,5 +1,5 @@
 from sqlalchemy import Table, MetaData, Column, Integer, String, Date, ForeignKey, Float, DateTime
-from sqlalchemy.orm import registry,  relationship
+from sqlalchemy.orm import registry,  relationship, attribute_keyed_dict
 
 import src.training_sessions.domain.models as model
 
@@ -36,13 +36,29 @@ training_session = Table('training_session',
                          Column('modified_at',DateTime) 
                          )
 
-sets = Table('sets', 
+
+exercises = Table('exercises',
+                    mapper_registry.metadata,
+                    Column('id', Integer, primary_key=True, autoincrement=True),
+                    Column('session_id', String(36), ForeignKey('training_session.id')),  
+                    Column('name', String(100))
+                 )
+
+
+series = Table('series',
+               mapper_registry.metadata,
+               Column('id', Integer, primary_key=True, autoincrement=True),
+               Column('exercise_id', Integer, ForeignKey('exercises.id')),
+               Column('number', Integer)
+               )
+
+
+
+repetitions = Table('repetitions', 
              mapper_registry.metadata,
              Column("id", Integer, primary_key=True, autoincrement=True),
-             Column('session_id', String(36), ForeignKey('training_session.id')),
-             Column('exercise', String(255)),
-             Column('series', Integer),
-             Column('repetition',Integer),
+             Column('series_id', Integer, ForeignKey('series.id')),
+             Column('number',Integer),
              Column('kg', Float),
              Column('distance', Float, nullable=True),
              Column('mean_velocity', Float, nullable=True),
@@ -56,12 +72,30 @@ sets = Table('sets',
 # relationships defined in the domain class
 
 def start_mappers():
-    sets_mapper = mapper_registry.map_imperatively(model.Set, sets)
+    
+
+    repetitions_mapper = mapper_registry.map_imperatively(model.Repetition, repetitions)
+    
+    series_mapper = mapper_registry.map_imperatively(model.Series ,
+            series,
+            properties = {
+
+                'repetitions' : relationship(repetitions_mapper, collection_class= list)
+
+            })
+
+    exercise_mapper = mapper_registry.map_imperatively(model.Exercise ,
+            exercises,
+            properties = {
+
+                'series' : relationship(series_mapper, collection_class = list)
+
+            })
 
     training_session_mapper = mapper_registry.map_imperatively(model.TrainingSession,
             training_session,
             properties = {
-                'sets' : relationship(sets_mapper, collection_class=set)
+                'exercises' : relationship(exercise_mapper, collection_class=attribute_keyed_dict("name"),)
             }
             )
     

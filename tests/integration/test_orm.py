@@ -87,6 +87,97 @@ def test_mapper_can_save_training_sessions(session):
     assert rows == [(id,user_id,str(current_time))]
 
 
+def test_mapper_can_load_exercises(session):
+
+    # Create new user
+    new_user = model.User(phone_number="+34600000000")
+    session.add(new_user)
+    user_id = new_user.id
+    session.commit()
+
+    # Create new training_session:
+    current_time = datetime.now()
+    new_training_session = model.TrainingSession(current_time)
+    training_session_id = new_training_session.id
+    new_user.add_training_session(new_training_session)
+    session.commit()
+
+    session.execute(text("INSERT INTO exercises (session_id, name) VALUES"
+                         '(:session_id, :name)'),
+                         dict(session_id = training_session_id, name = "press banca"))
+    
+
+    expected = model.Exercise(name = "press banca")
+    result = session.query(model.Exercise).filter_by(name = "press banca")[0]
+
+    assert expected == result
+
+
+def test_mapper_can_save_exercises(session):
+    
+    # Create new user
+    new_user = model.User(phone_number="+34600000000")
+    session.add(new_user)
+    user_id = new_user.id
+    session.commit()
+
+    # Create new training_session:
+    current_time = datetime.now()
+    new_training_session = model.TrainingSession(current_time)
+    training_session_id = new_training_session.id
+    new_user.add_training_session(new_training_session)
+    session.commit()
+
+    # Test mapper can save exercises
+    exercise = model.Exercise(name = "sentadilla voladora")
+    new_training_session._add_exercise(exercise)
+    session.commit()
+
+    obtain_session_id, obtained_name = session.execute(text("SELECT session_id, name FROM exercises WHERE name = :name"
+                                  ),
+                                  dict(name = "sentadilla voladora")).first()
+    
+    assert obtain_session_id == training_session_id
+    assert obtained_name == 'sentadilla voladora'
+
+
+
+def test_mapper_can_load_series(session):
+    # Create new user
+    new_user = model.User(phone_number="+34600000000")
+    session.add(new_user)
+    user_id = new_user.id
+    session.commit()
+
+    # Create new training_session:
+    current_time = datetime.now()
+    new_training_session = model.TrainingSession(current_time)
+    training_session_id = new_training_session.id
+    new_user.add_training_session(new_training_session)
+    session.commit()
+
+    # Create exercises
+    exercise = model.Exercise(name = "sentadilla voladora")
+    new_training_session._add_exercise(exercise)
+    session.commit()
+
+    # Get exercise ID
+    exercise_id = session.execute(text("SELECT id FROM exercises WHERE name = 'sentadilla voladora'")).first()[0]
+
+    # Test mapper can load series
+    session.execute(text("INSERT INTO series (exercise_id, number)  VALUES "
+                         '(:exercise_id, :number)'), 
+                         dict(exercise_id = 1, number = 1)
+                         )
+    expected = [model.Series(number = 1)]
+    result = session.query(model.Series).filter_by(exercise_id = exercise_id).all()
+
+    assert result[0].number == expected[0].number
+
+
+
+'''
+
 
 def test_mapper_can_load_sets(session):
     
@@ -171,3 +262,6 @@ def test_mapper_can_save_sets(session):
     rows = list(session.execute(text("SELECT session_id, exercise, series, repetition, kg, distance, mean_velocity, peak_velocity, power, rir FROM sets")))
 
     assert rows == [(new_training_session.id,'Press Banca', 1, 1,  214.3, 1.03, 0.24, 1.3, 100, 1)]
+
+
+'''

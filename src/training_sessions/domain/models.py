@@ -8,41 +8,20 @@ import logging
 class NotActiveSessions(Exception):
     pass
 
+
+class InvalidSeries(Exception):
+    pass
+
 class MissingSetInformation(Exception):
     def __init__(self, missing_fields: list[str]):
         self.missing_fields = missing_fields
         super().__init__(f"Missing required fields: {', '.join(missing_fields)}")
 
 
-def get_current_training_session(training_sessions: List[TrainingSession]) -> TrainingSession:
-    try:
-        latest_session = next(t for t in sorted(training_sessions, reverse=True) 
-                            if t.is_active() and 
-                            (datetime.now() - t.modified_at) < timedelta(hours=4))
-        return latest_session
-    except StopIteration:
-        raise NotActiveSessions
-   
-    
-
-
-def add_set(set: Set, training_sessions: List[TrainingSession]) -> int:
-    try:
-        training_session = next(t for t in sorted(training_sessions, reverse=True) if t.is_active())
-        training_session.add_set(set) 
-
-        return training_session.id
-    except StopIteration:
-        raise NotActiveSessions 
-
-
-
 @dataclass(unsafe_hash=True)
-class Set:
-    exercise: str
-    repetition: int
+class Repetition:
+    number: int
     kg: float
-    series: Optional[int]
     distance: Optional[float] = None
     mean_velocity: Optional[float]= None
     peak_velocity: Optional[float]= None
@@ -51,7 +30,7 @@ class Set:
 
     def validate(self) -> None:
         missing_fields = []
-        required_fields = ['exercise', 'repetition', 'kg']
+        required_fields = ['number', 'kg']
 
         # Weird validation because of how openai API handles None values
         for field in required_fields:
@@ -65,21 +44,59 @@ class Set:
             raise MissingSetInformation(missing_fields)
 
 
+class Series:
+    def __init__(self, number: int):
+        self.number = number
+        self.repetitions = []
+
+
+    # Verify incremental Order
+    def add_repetition(self, repetition: Repetition):
+        
+        last_rep_number = self.repetitions[-1].number if self.repetitions else 0
+
+        if repetition.number == last_rep_number + 1:
+            self.repetitions.append(repetition)
+        else:
+            raise InvalidSeries
+
+    def __str__(self):
+        f'Serie: {self.number}:'
 
 class Exercise:
     def __init__(self, name: str):
-        self.name = name
+        self.name = name.lower()
         self.series = []
+
+    def add_series(self):
+        if self.series:
+            last_series = self.series[-1]
+            next_series_number = last_series.number + 1
+            new_series = Series(number = next_series_number)
+
+            self.series.append(new_series)
+            return new_series
         
+        else:
+            new_series = Series(number = 1)
+            self.series.append(new_series)
+            return new_series
 
-
+    def __eq__(self,other):
+        if not isinstance(other, Exercise):
+            return False
+        else:
+            return self.name.lower() == other.name.lower()
+        
+    def __hash__(self):
+        return hash(self.name)
 
 #Check this, maybe I should just store user_id, not the whole object
 class TrainingSession:
     def __init__(self, started_at: datetime):
         self.id = str(uuid.uuid4())  
         self.started_at = started_at
-        self.sets = set()
+        self.exercises = dict()
         self.status = 'In progress'
         self.modified_at = self.started_at
         
@@ -99,21 +116,52 @@ class TrainingSession:
     def is_active(self):
         return self.status == 'In progress'
     
-    def add_set(self, set: Set):        
-        self.sets.add(set)
+    def _add_exercise(self, exercise: Exercise):        
+        if not exercise.name in self.exercises:
+            self.exercises[exercise.name] = exercise
         self.modified_at = datetime.now()
 
+    def get_exercise(self, exercise_name: str) -> Exercise:
+        if not exercise_name.lower() in self.exercises:
+            self._add_exercise(Exercise(name=exercise_name))
+
+        return self.exercises[exercise_name.lower()]
+    
     def end(self):
         if self.status == 'Completed':
-            raise ValueError('Session is completed')
+            pass
         
         self.status = 'Completed'
         self.modified_at = datetime.now()
 
     def __str__(self):
-        return f'{self.id}-{self.started_at}-{self.modified_at}-{self.sets}'
+        return f'{self.id}-{self.started_at}-{self.modified_at}-{self.exercises}'
 
-        
+
+
+### Things I will need to query easily:
+'''
+
+- User by telephone
+- Session by day
+- Exercise by name
+- Series by number
+
+
+Functions I will need to define in models:
+
+- user.get_training_session: gets or creates training session 
+- user.add_series(exercise_name: ... , series(list_of_dicts))
+    - I receive series info, no rep by rep. Makes sense to add the complete series
+    - The add_series function manages creating a new series object.
+    - It adds the repetitions
+    - Returns the data added. 
+
+
+'''
+
+
+    
 class User:
     def __init__(self,
     phone_number: str,
@@ -148,9 +196,37 @@ class User:
     def __hash__(self):
         return hash(self.id)
     
-    # Temporally I will add here logic to end previous session
-    def add_training_session(self, training_session: TrainingSession):
+
+    # Adds the new training session and ends previous
+    def add_training_session(self, training_session: TrainingSession) -> None:
         if len(self.training_sessions) > 0:
             self.training_sessions[-1].end()
             
         self.training_sessions.append(training_session)
+    
+    # Gets active session or creates new one
+    def get_training_session(self) -> TrainingSession:
+        try:
+            latest_session = next(t for t in sorted(self.training_sessions, reverse=True) 
+                                if t.is_active() and 
+                                (datetime.now() - t.modified_at) < timedelta(hours=4))
+            return latest_session
+        except StopIteration:
+            new_session = TrainingSession(started_at=datetime.now())
+            self.add_training_session(new_session)
+            return new_session    
+    
+
+    def add_series(self, exercise_name: str, repetitions: List[Repetition]) -> str:
+        
+        training_session = self.get_training_session()
+        exercise = training_session.get_exercise(exercise_name=exercise_name)
+        series = exercise.add_series()
+
+        for rep in repetitions:
+            series.add_repetition(rep)
+
+        return series
+
+        
+        
