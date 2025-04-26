@@ -1,0 +1,60 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // Configuration Name: Appears in the VS Code debug dropdown
+            "name": "Python: FastAPI (app_dev)",
+
+            // Type of debugger: Use the Python debugger
+            "type": "python",
+
+            // How to start debugging: Launch a new process
+            "request": "launch",
+
+            // What to launch: Use the 'uvicorn' module
+            "module": "uvicorn",
+
+            // Arguments to pass to the 'uvicorn' module
+            "args": [
+                // Path to your FastAPI app instance (relative to workspaceFolder)
+                "src.training_sessions.entrypoints.fastapi_app:app",
+                // Host to bind to (0.0.0.0 makes it accessible outside the container)
+                "--host=0.0.0.0",
+                // Port inside the container (matches your Dockerfile CMD and docker-compose port mapping)
+                "--port=80",
+                // Enable auto-reloading for development (uses watchfiles)
+                "--reload"
+            ],
+
+            // Enable Jinja template debugging if you use Jinja2 (optional but often helpful)
+            "jinja": true,
+
+            // Debug only your code by default (set to false to step into libraries)
+            "justMyCode": true,
+
+            // Set the working directory inside the container
+            // ${workspaceFolder} resolves to /src based on your devcontainer.json
+            "cwd": "${workspaceFolder}",
+
+            // Where to show the output/logs
+            "console": "integratedTerminal",
+
+            // Environment variables are typically inherited from the dev container's environment,
+            // which is set by your docker-compose.yml file for the app_dev service.
+            // You usually don't need to redefine them here unless you want to override
+            // a specific variable just for this debug session.
+            // "env": {
+            //     "SOME_DEBUG_SPECIFIC_VAR": "value"
+            // }
+
+            // --- Important Notes for Dev Containers ---
+            // When running inside a Dev Container managed by the VS Code extension,
+            // VS Code typically handles the necessary debugger injection (debugpy)
+            // and port forwarding automatically for "launch" requests.
+            // You usually don't need to explicitly configure debugpy listening ports (like 5678)
+            // in a "launch" config within this setup. The "5678:5678" port mapping
+            // in docker-compose is more relevant if you were manually starting debugpy
+            // or using an "attach" configuration from outside the container context.
+        }
+    ]
+}
