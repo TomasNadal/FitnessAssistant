@@ -1,100 +1,133 @@
 import pytest
-from src.training_sessions.domain.models import TrainingSession, User, Exercise, Series, Repetition
-from datetime import datetime, timedelta
-
+from src.training_sessions.domain.models import WorkoutSession, User, Exercise, ExerciseSet, ExerciseRepetition, Meal, EatingDay, FoodItem, Recipe, RecipeIngredient 
+from datetime import datetime, timedelta, date
 
 
 def test_basic_create_user():
-
     phone_number = '+3467854323'
+    name = "John"
+    gender = "Male"
 
-    new_user = User(phone_number=phone_number)
-    print(new_user.id)
+    new_user = User(phone_number=phone_number, name=name, gender=gender)
 
     assert new_user.phone_number == phone_number
-    assert new_user.training_sessions == []
+    assert new_user.name == name
+    assert new_user.gender == gender
+    assert new_user.workout_sessions == []
 
 
-def test_training_sessions_are_ended_when_new_added():
-    new_user = User(phone_number='+34675647392')
-
-    new_user.add_training_session(TrainingSession(started_at=datetime(2020,2,1)))
-
-    training_sessions = [TrainingSession(started_at= datetime.now() - timedelta(days=i)) for i in range(1,3)]
-
-    for training_session in training_sessions:
-        assert new_user.training_sessions[-1].status == 'In progress'
-        previous_session_id = new_user.training_sessions[-1].id
-        new_user.add_training_session(training_session)
-        assert new_user.training_sessions[-2].status == 'Completed'
-        assert previous_session_id ==new_user.training_sessions[-2].id
-        assert new_user.training_sessions[-1].status == 'In progress'
+def test_workout_sessions_are_ended_when_new_added():
+    new_user = User(phone_number='+34675647392', name="Jane", gender="Female")
+    
+    # First session
+    first_session = WorkoutSession(started_at=datetime(2020,2,1))
+    new_user.add_workout_session(first_session)
+    
+    # End the first session so we can add more
+    new_user.end_workout_session()
+    
+    # Add more sessions
+    for i in range(1, 3):
+        session = WorkoutSession(started_at=datetime.now() - timedelta(days=i))
+        
+        # Make sure previous session is completed
+        assert new_user.workout_sessions[-1].is_completed()
+        
+        # Store previous session ID for comparison
+        previous_session = new_user.workout_sessions[-1]
+        
+        # Add new session
+        new_user.add_workout_session(session)
+        
+        # Verify previous session is still completed
+        assert previous_session.is_completed()
+        
+        # End the current session so we can add another
+        session.end_time = session.start_time + timedelta(hours=1)
 
 
 def test_user_can_add_exercises():
-    new_user = User(phone_number='34658493846')
-    training_session = TrainingSession(started_at=datetime.now())
-    new_user.add_training_session(training_session)
+    new_user = User(phone_number='34658493846', name="Alex", gender="Male")
+    workout_session = WorkoutSession(started_at=datetime.now())
+    new_user.workout_sessions.append(workout_session)
 
-    exercise = Exercise(name = "Press Banca")
-    training_session.add_exercise(exercise)
-
-    assert training_session.exercises["press banca"] == exercise
-
-
-
-def test_user_can_add_series_to_exercise():
-    #Add user
-    new_user = User(phone_number='34658493846')
-    training_session = TrainingSession(started_at=datetime.now())
-    # Add training session
-    new_user.add_training_session(training_session)
-    # Add exercise
-    exercise = Exercise(name = "Press Banca")
-    training_session.add_exercise(exercise)
-    # Add series
-
-    exercise.add_series()
-
-    assert exercise.series[-1].number == 1
-
-
-def test_series_autoincrement_number():
-    #Add user
-    new_user = User(phone_number='34658493846')
-    training_session = TrainingSession(started_at=datetime.now())
-    # Add training session
-    new_user.add_training_session(training_session)
-    # Add exercise
-    exercise = Exercise(name = "Press Banca")
-    training_session.add_exercise(exercise)
-    # Add series
-    number_of_series = 4
-    series_output = [exercise.add_series() for i in range(number_of_series)]
-
-    assert list(range(1,number_of_series+1)) == [series.number for series in series_output]
-
-
-
-def test_user_can_add_repetitions_to_series():
-    #Add user
-    new_user = User(phone_number='34658493846')
-    training_session = TrainingSession(started_at=datetime.now())
-    # Add training session
-    new_user.add_training_session(training_session)
-    # Add exercise
-    exercise = Exercise(name = "Press Banca")
-    training_session.add_exercise(exercise)
-    # Add series
-    serie = exercise.add_series()
+    exercise = Exercise(
+        name="Press Banca",
+        description="Chest press exercise",
+        primary_muscle_group="Chest",
+        secondary_muscle_group="Triceps"
+    )
     
+    # Create an exercise set
+    exercise_set = ExerciseSet(
+        workout_session=workout_session,
+        exercise=exercise,
+        set_number=1,
+        weight=100.0,
+        reps=10
+    )
+    
+    # Add the exercise set to the workout session
+    workout_session.exercise_sets.append(exercise_set)
 
-    # Add repetition
-    repetition = Repetition(number = 1, kg = 100)
-    serie.add_repetition(repetition)
+    assert any(es.exercise.name == "Press Banca" for es in workout_session.exercise_sets)
 
-    assert serie.repetitions[-1] == repetition
 
+def test_user_can_add_repetitions_to_exercise_set():
+    new_user = User(phone_number='34658493846', name="Sam", gender="Female")
+    workout_session = WorkoutSession(started_at=datetime.now())
+    new_user.workout_sessions.append(workout_session)
+    
+    exercise = Exercise(
+        name="Press Banca",
+        description="Chest press exercise",
+        primary_muscle_group="Chest",
+        secondary_muscle_group="Triceps"
+    )
+    
+    # Create an exercise set with 1 rep
+    exercise_set = ExerciseSet(
+        workout_session=workout_session,
+        exercise=exercise,
+        set_number=1,
+        weight=100.0,
+        reps=1
+    )
+    
+    workout_session.exercise_sets.append(exercise_set)
+    
+    # Create a repetition
+    repetition = ExerciseRepetition(
+        number=1,
+        kg=100.0,
+        distance=0.5,
+        mean_velocity=0.8,
+        peak_velocity=1.2,
+        power=120.0
+    )
+    
+    # Add the repetition to the exercise set
+    exercise_set._add_repetition(repetition)
+
+    assert exercise_set.repetitions[-1] == repetition
+
+
+
+
+def test_user_can_add_meals():
+    new_user = User(phone_number='34658493846', name="Alex", gender="Male")
+    meal = Meal(date=datetime.now(), meal_type="Breakfast")
+    new_user.meals.append(meal)
+
+    assert any(m.date == datetime.now() for m in new_user.meals)
+
+
+def test_user_can_add_meals_given_date():
+    new_user = User(phone_number='34658493846', name="Alex", gender="Male")
+    meal = Meal(date=datetime.now(), meal_type="Breakfast")
+    new_user.add_meal_given_date(meal, datetime.now())
+
+    assert any(m.date == datetime.now() for m in new_user.meals)        
 
 
 

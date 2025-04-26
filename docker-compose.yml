@@ -1,27 +1,84 @@
-version: "1"
-services: 
+# docker-compose.yml
+services:
+    db_dev:
+        image: postgres:16.5
+        environment:
+            - POSTGRES_USER=FitnessAssistant_user
+            - POSTGRES_PASSWORD=training
+            - POSTGRES_DB=FitnessAssistantDB_dev
+        ports:
+            # Changed host port from 34526 to 34536 to avoid conflict
+            - "34536:5432"
+        volumes:
+            - postgres_data_dev:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U FitnessAssistant_user -d FitnessAssistantDB_dev"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
-    app: #(1)
+    db_prod:
+        image: postgres:16.5
+        environment:
+            - POSTGRES_USER=FitnessAssistant_user
+            - POSTGRES_PASSWORD=training
+            - POSTGRES_DB=FitnessAssistantDB
+        ports:
+            # This port (34527) seems okay based on the error log, leaving as is.
+            - "34527:5432"
+        volumes:
+            - postgres_data_prod:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U FitnessAssistant_user -d FitnessAssistantDB"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    app:
         build:
             context: .
-            dockerfile: dockerfile
-        depends_on:
-            - postgres
-        environment: #(3)
-            - DB_HOST=postgres #(4)
-            - DB_PASSWORD=training
-            - API_HOST=app
-            - PYTHONDONTWRITEBYTECODE=1 #(5)
-        volumes: #(6)
-            - ./src:/src
-            - ./tests:/tests
-        ports:
-            - "5005:80" #(7)
-
-    postgres:
-        image: postgres:16.5 #(2)
+            target: app
         environment:
-            - POSTGRES_USER=training_session_user
-            - POSTGRES_PASSWORD=training_session_dev
+            - DB_HOST=db_prod # Connects internally to db_prod:5432
+            - DB_PASSWORD=training
+            - ACCESS_TOKEN=${ACCESS_TOKEN}
+            - VERSION=${VERSION}
+            - APP_SECRET=${APP_SECRET}
+            - PHONE_NUMBER_ID=${PHONE_NUMBER_ID}
+            - VERIFY_TOKEN=${VERIFY_TOKEN}
+        volumes:
+            - ./src:/src/src
+            - ./config:/src/config
         ports:
-            - "34526:5432"
+            - "5000:80"
+        depends_on:
+            db_prod:
+                condition: service_healthy
+
+    app_dev:
+        build:
+            context: .
+            target: dev
+        environment:
+            - DB_HOST=db_dev
+            - DB_PASSWORD=training
+            - ACCESS_TOKEN=${ACCESS_TOKEN}
+            - VERSION=${VERSION}
+            - APP_SECRET=${APP_SECRET}
+            - PHONE_NUMBER_ID=${PHONE_NUMBER_ID}
+            - VERIFY_TOKEN=${VERIFY_TOKEN}
+            - PYTHONDONTWRITEBYTECODE=1
+            - PYTHONUNBUFFERED=1
+        volumes:
+            - .:/src
+        ports:
+            - "8000:80"
+            - "5678:5678"  # For debugpy
+        depends_on:
+            db_dev:
+                condition: service_healthy
+        command: sleep infinity  # Keep container running for devcontainer
+
+volumes:
+    postgres_data_dev:
+    postgres_data_prod:

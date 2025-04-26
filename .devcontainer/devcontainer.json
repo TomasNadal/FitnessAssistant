@@ -1,0 +1,34 @@
+{
+    /// Allows to debug the FastAPI app. 
+    "name": "Fitness Assistant Development",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "app_dev",
+    "workspaceFolder": "/src",
+    
+    // Customize VS Code configuration
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.linting.enabled": true,
+                "python.linting.pylintEnabled": true,
+                "python.formatting.provider": "black",
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "python.analysis.extraPaths": ["/src"]
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-azuretools.vscode-docker",
+                "ms-python.black-formatter",
+                "ms-python.flake8"
+            ]
+        }
+    },
+    
+    // Forward the debug port and web server port
+    "forwardPorts": [8000, 5678],
+    
+    // Run commands after container is created
+    "postCreateCommand": "pip install -e ."
+}

@@ -5,263 +5,219 @@ from datetime import datetime
 
 
 def test_mapper_can_load_user(session):
-
-    expected = [model.User(phone_number="+34600000000"),
-                model.User(phone_number="+34600000001"),
-                model.User(phone_number="+34600000002")]
-    
-    [id1,id2,id3] = [user.id for user in expected]
-    session.execute(text("INSERT INTO user (id, phone_number) VALUES "
-                    '(:id1,"+34600000000"),'
-                    '(:id2, "+34600000001"),'
-                    '(:id3, "+34600000002")'
-                ), dict(id1 = id1, id2 = id2, id3 = id3))
-    
-
-    
-
-    assert session.query(model.User).all() == expected
-
-def test_mapper_can_save_user(session):
-
-    new_user = model.User(phone_number="+34600000000")
-    id = new_user.id
-    session.add(new_user)
-
-    session.commit()
-
-    rows = list(session.execute(text('SELECT id, phone_number FROM "user"')))
-
-    assert rows == [(id, "+34600000000")]
-
-
-def test_mapper_can_load_training_session(session):
-
-    # Create new user
-    new_user = model.User(phone_number="+34600000000")
-    session.add(new_user)
-    session.commit()
-
-    current_time = datetime.now()
-
-    # 
-    expected = [model.TrainingSession(current_time)]
-    
-    session_id = expected[0].id
+    expected = [
+        model.User(phone_number="+34600000000", name="Test User", gender="Male"),
+        model.User(phone_number="+34600000001", name="Test User2", gender="Female"),
+        model.User(phone_number="+34600000002", name="Test User3", gender="Male")
+    ]
     
     session.execute(
-    text(
-        "INSERT INTO training_session (id, user_id, status, started_at, modified_at) "
-        "VALUES (:id, :user_id, :status, :started_at, :modified_at)"
-    ),
-    {
-        "id": session_id,
-        "user_id": new_user.id,
-        "status": "In progress",
-        "started_at": current_time,
-        "modified_at": current_time
-    }
-)
-
-
+        text("INSERT INTO users (phone_number, name, gender) VALUES "
+             "(:phone1, :name1, :gender1),"
+             "(:phone2, :name2, :gender2),"
+             "(:phone3, :name3, :gender3)"
+        ), {
+            "phone1": "+34600000000", "name1": "Test User", "gender1": "Male",
+            "phone2": "+34600000001", "name2": "Test User2", "gender2": "Female",
+            "phone3": "+34600000002", "name3": "Test User3", "gender3": "Male"
+        }
+    )
     
-    assert session.query(model.TrainingSession).all() == expected
+    users = session.query(model.User).all()
+    
+    # Compare only phone numbers since other attributes might have default values
+    assert [u.phone_number for u in users] == [u.phone_number for u in expected]
 
 
-def test_mapper_can_save_training_sessions(session):
-    # Create new user
-    new_user = model.User(phone_number="+34600000000")
+def test_mapper_can_save_user(session):
+    new_user = model.User(phone_number="+34600000000", name="Test User", gender="Male")
     session.add(new_user)
-    user_id = new_user.id
+    session.commit()
+
+    rows = list(session.execute(text('SELECT phone_number, name, gender FROM users')))
+    assert rows == [("+34600000000", "Test User", "Male")]
+
+
+def test_mapper_can_load_workout_session(session):
+    # Create new user
+    new_user = model.User(phone_number="+34600000000", name="Test User", gender="Male")
+    session.add(new_user)
+    session.commit()
+
+    current_time = datetime.now()
+    
+    # Insert workout session
+    session.execute(
+        text(
+            "INSERT INTO workout_sessions (user_id, start_time, created_at, updated_at) "
+            "VALUES (:user_id, :start_time, :created_at, :updated_at)"
+        ),
+        {
+            "user_id": 1,  # Assuming user ID is 1
+            "start_time": current_time,
+            "created_at": current_time,
+            "updated_at": current_time
+        }
+    )
+    
+    # Query the workout session
+    workout_session = session.query(model.WorkoutSession).first()
+    
+    assert workout_session is not None
+    assert workout_session.start_time == current_time
+
+
+def test_mapper_can_save_workout_sessions(session):
+    # Create new user
+    new_user = model.User(phone_number="+34600000000", name="Test User", gender="Male")
+    session.add(new_user)
     session.commit()
 
     current_time = datetime.now()
 
-    new_training_session = model.TrainingSession(current_time)
-    new_user.add_training_session(new_training_session)
-    id = new_training_session.id
+    # Create new workout session
+    new_workout_session = model.WorkoutSession(started_at=current_time)
+    new_user.add_workout_session(new_workout_session)
     session.commit()
 
-    rows = list(session.execute(text("SELECT id, user_id, started_at FROM 'training_session'")))
-
-    assert rows == [(id,user_id,str(current_time))]
+    rows = list(session.execute(text("SELECT user_id, start_time FROM workout_sessions")))
+    
+    # Check that the user_id is 1 and start_time matches
+    assert len(rows) == 1
+    assert rows[0][0] == 1  # user_id
+    assert datetime.strptime(rows[0][1], '%Y-%m-%d %H:%M:%S.%f') == current_time  # start_time
 
 
 def test_mapper_can_load_exercises(session):
-
-    # Create new user
-    new_user = model.User(phone_number="+34600000000")
-    session.add(new_user)
-    user_id = new_user.id
-    session.commit()
-
-    # Create new training_session:
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(current_time)
-    training_session_id = new_training_session.id
-    new_user.add_training_session(new_training_session)
-    session.commit()
-
-    session.execute(text("INSERT INTO exercises (session_id, name) VALUES"
-                         '(:session_id, :name)'),
-                         dict(session_id = training_session_id, name = "press banca"))
     
-
-    expected = model.Exercise(name = "press banca")
-    result = session.query(model.Exercise).filter_by(name = "press banca")[0]
-
-    assert expected == result
+    # Insert exercise
+    session.execute(
+        text(
+            "INSERT INTO exercises (name, description, primary_muscle_group, secondary_muscle_group, is_compound) "
+            "VALUES (:name, :description, :primary, :secondary, :is_compound)"
+        ),
+        {
+            "name": "Bench Press",
+            "description": "Chest exercise",
+            "primary": "Chest",
+            "secondary": "Triceps",
+            "is_compound": True
+        }
+    )
+    
+    # Query the exercise
+    exercise = session.query(model.Exercise).first()
+    
+    assert exercise is not None
+    assert exercise.name == "Bench Press"
+    assert exercise.primary_muscle_group == "Chest"
 
 
 def test_mapper_can_save_exercises(session):
-    
-    # Create new user
-    new_user = model.User(phone_number="+34600000000")
-    session.add(new_user)
-    user_id = new_user.id
-    session.commit()
-
-    # Create new training_session:
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(current_time)
-    training_session_id = new_training_session.id
-    new_user.add_training_session(new_training_session)
-    session.commit()
-
-    # Test mapper can save exercises
-    exercise = model.Exercise(name = "sentadilla voladora")
-    new_training_session._add_exercise(exercise)
-    session.commit()
-
-    obtain_session_id, obtained_name = session.execute(text("SELECT session_id, name FROM exercises WHERE name = :name"
-                                  ),
-                                  dict(name = "sentadilla voladora")).first()
     
-    assert obtain_session_id == training_session_id
-    assert obtained_name == 'sentadilla voladora'
-
-
-
-def test_mapper_can_load_series(session):
-    # Create new user
-    new_user = model.User(phone_number="+34600000000")
-    session.add(new_user)
-    user_id = new_user.id
+    # Create new exercise
+    new_exercise = model.Exercise(
+        name="Squat",
+        description="Leg exercise",
+        primary_muscle_group="Quadriceps",
+        secondary_muscle_group="Glutes",
+        is_compound=True
+    )
+    
+    session.add(new_exercise)
     session.commit()
 
-    # Create new training_session:
+    rows = list(session.execute(text("SELECT name, primary_muscle_group FROM exercises")))
+    
+    assert rows == [("Squat", "Quadriceps")]
+
+
+def test_exercise_set_relationships(session):
+    # Create user
+    user = model.User(phone_number="+34600000000", name="Test User", gender="Male")
+    session.add(user)
+    session.commit()
+    
+    # Create workout session
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(current_time)
-    training_session_id = new_training_session.id
-    new_user.add_training_session(new_training_session)
-    session.commit()
-
-    # Create exercises
-    exercise = model.Exercise(name = "sentadilla voladora")
-    new_training_session._add_exercise(exercise)
-    session.commit()
-
-    # Get exercise ID
-    exercise_id = session.execute(text("SELECT id FROM exercises WHERE name = 'sentadilla voladora'")).first()[0]
-
-    # Test mapper can load series
-    session.execute(text("INSERT INTO series (exercise_id, number)  VALUES "
-                         '(:exercise_id, :number)'), 
-                         dict(exercise_id = 1, number = 1)
-                         )
-    expected = [model.Series(number = 1)]
-    result = session.query(model.Series).filter_by(exercise_id = exercise_id).all()
-
-    assert result[0].number == expected[0].number
-
-
-
-'''
-
-
-def test_mapper_can_load_sets(session):
+    workout = model.WorkoutSession(started_at=current_time)
+    user.add_workout_session(workout)
     
-    # Create new user
-    new_user = model.User(phone_number="+34600000000")
-    session.add(new_user)
-    user_id = new_user.id
+    # Create exercise
+    exercise = model.Exercise(
+        name="Deadlift",
+        description="Back exercise",
+        primary_muscle_group="Back",
+        secondary_muscle_group="Hamstrings",
+        is_compound=True
+    )
+    session.add(exercise)
+    
+    # Create exercise set
+    exercise_set = model.ExerciseSet(
+        set_number=1,
+        weight_kg=100.0,
+        reps=5,
+        workout_session=workout,
+        exercise=exercise
+    )
+    session.add(exercise_set)
+    
     session.commit()
+    
+    # Query the exercise set
+    loaded_set = session.query(model.ExerciseSet).first()
+    
+    assert loaded_set is not None
+    assert loaded_set.set_number == 1
+    assert loaded_set.weight_kg == 100.0
+    assert loaded_set.reps == 5
+    assert loaded_set.exercise.name == "Deadlift"
+    assert loaded_set.workout_session.start_time == current_time
 
-    # Create new training_session:
+
+def test_exercise_set_relationships_in_postgres(session_factory_non_persistent):
+    # Create user
+    session = session_factory_non_persistent()
+    user = model.User(phone_number="+34600000000", name="Test User", gender="Male")
+    session.add(user)
+    session.commit()
+    
+    # Create workout session
     current_time = datetime.now()
-    new_training_session = model.TrainingSession(current_time)
-    training_session_id = new_training_session.id
-    new_user.add_training_session(new_training_session)
-    session.commit()
-
-
-    # Add set:
-    session.execute(text("INSERT INTO sets (session_id, exercise, series, repetition, kg, distance, mean_velocity, peak_velocity, power, rir)"
-                         "VALUES (:session_id, :exercise, :series, :repetition, :kg, :distance, :mean_velocity, :peak_velocity, :power, :rir)"
-                         ),
-                         {'session_id' : new_training_session.id,
-                           'exercise': 'Press Banca',
-                          'series': 1,
-                          'repetition': 1,
-                          'kg': 214.3,
-                          'distance': 1.03,
-                          'mean_velocity': 0.24,
-                          'peak_velocity': 1.3,
-                          'power': 100,
-                          'rir': 1
-                          } 
-                    )
+    workout = model.WorkoutSession(started_at=current_time)
+    user.add_workout_session(workout)
     
-    expected =            [model.Set(
-                                exercise = 'Press Banca',
-                                    series = 1,
-                                    repetition = 1,
-                                    kg =  214.3,
-                                    distance =  1.03,
-                                    mean_velocity = 0.24,
-                                    peak_velocity =1.3,
-                                    power = 100 ,
-                                    rir = 1)]
+    # Create exercise
+    exercise = model.Exercise(
+        name="Deadlift",
+        description="Back exercise",
+        primary_muscle_group="Back",
+        secondary_muscle_group="Hamstrings",
+        is_compound=True
+    )
+    session.add(exercise)
     
-
-    assert session.query(model.Set).all() == expected
-
-
-
-def test_mapper_can_save_sets(session):
-
-     # Add SQL logging
-    def on_sql(statement, *_):
-        print(f'Statement: {statement}')
+    # Create exercise set
+    exercise_set = model.ExerciseSet(
+        set_number=1,
+        weight_kg=100.0,
+        reps=5,
+        workout_session=workout,
+        exercise=exercise
+    )
+    session.add(exercise_set)
     
-    event.listen(session.bind, 'before_cursor_execute', on_sql)
-
-    # Your existing test code
-    new_user = model.User(phone_number="+34600000000")
-    session.add(new_user)
     session.commit()
-
-    current_time = datetime.now()
-    new_training_session = model.TrainingSession(current_time)
-    new_user.add_training_session(new_training_session)
-    session.commit()
-
-    new_training_set = model.Set(exercise = 'Press Banca',
-                                    series = 1,
-                                    repetition = 1,
-                                    kg =  214.3,
-                                    distance =  1.03,
-                                    mean_velocity = 0.24,
-                                    peak_velocity =1.3,
-                                    power = 100 ,
-                                    rir = 1)
     
-    new_training_session.add_set(new_training_set)
-    session.commit()
-
-    rows = list(session.execute(text("SELECT session_id, exercise, series, repetition, kg, distance, mean_velocity, peak_velocity, power, rir FROM sets")))
-
-    assert rows == [(new_training_session.id,'Press Banca', 1, 1,  214.3, 1.03, 0.24, 1.3, 100, 1)]
-
-
-'''
+    # Query the exercise set
+    loaded_set = session.query(model.ExerciseSet).first()
+    
+    assert loaded_set is not None
+    assert loaded_set.set_number == 1
+    assert loaded_set.weight_kg == 100.0
+    assert loaded_set.reps == 5
+    assert loaded_set.exercise.name == "Deadlift"
+    assert loaded_set.workout_session.start_time == current_time

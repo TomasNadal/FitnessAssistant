@@ -22,7 +22,10 @@ class SqlAlchemyRepository(AbstractRepository):
     def add(self, user):
         self.session.add(user)
 
-    def get(self, phone_number):
+    def get(self, user):
+        return self.session.query(model.User).filter_by(id = id).one()
+
+    def get_by_phone_numbers(self, phone_number):
         return self.session.query(model.User).filter_by(phone_number = phone_number).one()
 
     def list(self):

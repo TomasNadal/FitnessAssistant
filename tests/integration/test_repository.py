@@ -5,36 +5,42 @@ from datetime import datetime
 from sqlalchemy import text
 import uuid
 
-def test_repository_can_save_user(session):
+def test_repo_can_save_user(session):
+    user = model.User(phone_number='+34545222123',name = 'Jose', gender = 'Male')
 
-    # Prepare
-    new_user = model.User(phone_number='+34545222123',name = 'Jose')
-    user_repo = repository.SqlAlchemyRepository(session)
+    repo = repository.SqlAlchemyRepository(session)
+    repo.add(user)
+    session.commit()
 
-    # Function to assess
-    user_repo.add(new_user)
-    session.commit() # Remember we leave commit responsibility to the caller
+    rows = session.execute(text("SELECT id, phone_number, name FROM users"))
+    assert list(rows) == [(user.id,'+34545222123','Jose')]
 
-    # SQL to get info
-    rows = session.execute(text("SELECT id, phone_number, name FROM user"))
 
-    assert list(rows) == [(new_user.id,'+34545222123','Jose')]
+
 
 
 def insert_user(session):
     user_id = str(uuid.uuid4())
-    session.execute(
-        text("INSERT INTO user (id, phone_number, name) VALUES (:id, :phone_number, :name)"),
-        {"id": user_id, "phone_number": '+34545222123', "name": "Jose"}
-    )
+    session.execute(text(
+        "INSERT INTO users (id,phone_number,gender,name)"
+        "VALUES (:id,:phone_number,:gender,:name)"
+        ),
+    {
+        "id": user_id,
+        "phone_number": "+34545222123",
+        "gender": "Male",
+        "name": "Jose"
+    })
     return user_id
+
+'''
 
 def insert_training_session(session, user_id):
     training_session_id = str(uuid.uuid4())
 
     session.execute(
     text(
-        "INSERT INTO training_session (id, user_id, status, started_at, modified_at) "
+        "INSERT INTO workout_sessions (id, user_id, status, started_at, modified_at) "
         "VALUES (:id, :user_id, :status, :started_at, :modified_at)"
     ),
     {
@@ -89,3 +95,4 @@ def test_repository_can_retrieve_user_with_training_sessions(session):
     assert retrieved.training_sessions[0].id == training_session_id
 
 
+'''

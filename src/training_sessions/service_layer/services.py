@@ -6,8 +6,9 @@ import src.training_sessions.domain.models as model
 from src.training_sessions.adapters.repository import AbstractRepository
 from src.training_sessions.adapters.whatsapp_api import WhatsappClient
 from src.training_sessions.adapters.transcriber import OpenAiTranscriber
+from src.training_sessions.service_layer.unit_of_work import AbstractUnitOfWork
 
-from src.training_sessions.domain.sets_parser import CSVFileParser, TextParser, InvalidTrainingData
+from src.training_sessions.domain.sets_parser import CSVFileParser, TextParser, AbstractFileParser, InvalidTrainingData
 from openai import OpenAI
 
 '''
@@ -18,100 +19,107 @@ Here should go the Orchestration Logic
 - If all is well, we save/update the state
 '''
 
-def get_or_create_user(phone_number: str , repo: AbstractRepository, session,) -> str:
-    
-    
+def get_or_create_user_and_training_session(phone_number: str,  uow: AbstractUnitOfWork ) -> str:
     try:
-        user = repo.get(phone_number=phone_number)
+
+        user = uow.users.get(phone_number=phone_number)
+        training_session = user.get_training_session()
+
     except Exception:
+
         user = model.User(phone_number=phone_number)
-        repo.add(user)  
-        session.commit()
-    return user
+        uow.users.add(user)  
+        training_session = user.get_training_session()
+        uow.commit()
+    return user, training_session
 
-def get_or_create_training_session(phone_number: str, repo: AbstractRepository, session) -> None:
-    user = get_or_create_user(phone_number, repo, session)
-    
-    try:
-        # Domain logic for finding valid active session
-        return user,model.get_current_training_session(user.training_sessions)
-    
-    except model.NotActiveSessions:
-        # Orchestration for creating new session
-        new_training_session = model.TrainingSession(started_at=datetime.now())
-        user.add_training_session(new_training_session)
-        session.commit()
-        return user,new_training_session
+# I know I will need to refactor this to follow SOLID
+def initialize_parser(message_type: str, training_session_id: typing.Optional[str]) -> AbstractFileParser:
+    if ( message_type == 'audio') or (message_type == 'text'):
+        parser = TextParser(OpenAI())
 
+    elif message_type == 'document':
+        parser = CSVFileParser(training_session_id)
 
-def add_sets(phone_number: str, set_data: typing.Set[model.Set], repo: AbstractRepository, session, ):
-    user = get_or_create_user(phone_number,repo,session)
-    user, training_session = get_or_create_training_session(phone_number, repo, session)
+    return parser
 
-    sorted_sets = sorted(set_data, key = lambda x: (x.series, x.repetition))
-
-    for set in sorted_sets:
-        training_session.sets
-        training_session_id = model.add_set(set, user.training_sessions)
-
-
-    series_info = {'exercise': sorted_sets[-1].exercise,
-                   'series': sorted_sets[-1].series,
-                   'repetition':sorted_sets[-1].repetition,
-                   'kg': sorted_sets[-1].kg, 
-                   'rir':sorted_sets[-1].rir}
-    
-    session.commit()
-
-    return training_session_id, series_info
-
-
-def add_sets_from_raw(payload: dict, repo: AbstractRepository, api: WhatsappClient, session) -> dict:
-    
-
+def extract_and_parse(payload: dict, api: WhatsappClient, uow: AbstractUnitOfWork):
     phone_number = payload["from"]
     message_type = payload["type"]
-    print(f'This is the message type {message_type}')
-    if message_type=="document":
-        parser = CSVFileParser()
-        document = payload[message_type]
-        file_path = api.download_media(document["filename"], document["id"])
-        training_sets = parser.parse(file_path)
 
-        training_session_id, series_info = add_sets(phone_number, training_sets, repo, session)
+    with uow:
+        user, training_session = get_or_create_user_and_training_session(phone_number, uow)
+        parser = initialize_parser(message_type, training_session.id)
 
-        api.send_text_message(phone_number, f'Se ha añadido la serie {series_info["series"]} de {series_info["exercise"]}, {series_info["repetition"]} repeticiones con {series_info["kg"]} kg')
-        return training_session_id, series_info
-    
-    elif message_type=="audio":
-        audio = payload[message_type]
-        file_path_ogg = api.download_media("audio.ogg", audio["id"])
+        if message_type == 'audio':
+            audio = payload[message_type]
+            file_path_ogg = api.download_media("audio.ogg", audio["id"])
+            transcriber = OpenAiTranscriber()
+            transcript = transcriber.transcribe(file_path_ogg, "mp3")
 
-        transcriber = OpenAiTranscriber()
-        parser = TextParser(OpenAI())
+            training_sets = parser.parse(transcript)
 
-        transcript = transcriber.transcribe(file_path_ogg, "mp3")
-
-        training_sets = parser.parse(transcript)
-
-        training_session_id, series_info = add_sets(phone_number, training_sets, repo, session)
-
-        api.send_text_message(phone_number, f'Se ha añadido la serie {series_info["series"]} de {series_info["exercise"]}, {series_info["repetition"]} repeticiones con {series_info["kg"]} kg')
-    
-        return training_session_id, series_info
-    
-    elif message_type=="text":
-        parser = TextParser(OpenAI())
-        message_body = payload[message_type]["body"]
-
-        try:
+        elif message_type == 'text':
+            message_body = payload[message_type]["body"]
             training_sets = parser.parse(message_body)
-            training_session_id, series_info = add_sets(phone_number, training_sets, repo, session)
 
-            api.send_text_message(phone_number, f'Se ha añadido la serie {series_info["series"]} de {series_info["exercise"]}, {series_info["repetition"]} repeticiones con {series_info["kg"]} kg')
+        elif message_type == 'document':
+            document = payload[message_type]
+            file_path = api.download_media(document["filename"], document["id"])
+
+            training_sets = parser.parse(file_path)
+
+        return training_sets
+
+
+
+def add_series(phone_number: str, raw_series: list, uow: AbstractUnitOfWork ) -> typing.List[str]:
+    
+    
+
+    added_series = []
+    with uow:
+        user, training_session = get_or_create_user_and_training_session(phone_number, uow)
         
-            return training_session_id, series_info
-        except InvalidTrainingData:
-            raise
-    else:
-        pass
+        for s in raw_series:
+            exercise = training_session.get_exercise(s['exercise'])
+
+            serie = exercise.add_series()
+            
+            for rep in s['repetitions']:
+
+                serie.add_repetition(model.Repetition(**rep))
+            print(f'Testing the series str {serie}')
+            added_series.append(str(serie))
+
+        uow.commit()
+
+    return added_series
+
+
+
+def add_sets_from_raw(payload: dict, api: WhatsappClient, uow: AbstractUnitOfWork) -> dict:
+    phone_number = payload["from"]
+    training_series = None  # Initialize the variable first
+    
+    try:
+        training_series = extract_and_parse(payload, api, uow)
+    except InvalidTrainingData as e:
+        api.send_text_message(phone_number, f'Por favor, manda la serie incluyendo estos datos que no mencionaste: {e.parsing_errors}')
+        return {}  # Return early after sending error message
+    except Exception as e:
+        api.send_text_message(phone_number, f'Error inesperado: {str(e)}')
+        return {}  # Return early after sending error message
+    
+    # If we get here, training_series was successfully assigned
+    if not training_series:  # Check if it's empty/None
+        api.send_text_message(phone_number, f'Invalid payload: {payload}')
+        return {}
+
+    # Process valid training series
+    series_str = add_series(payload["from"], training_series, uow)
+    
+    for serie in series_str:
+        api.send_text_message(phone_number, f'Se ha añadido la serie {str(serie)}')
+    
+    return {"status": "success", "series": series_str}  # Return success result

@@ -48,7 +48,13 @@ def get_training_session_id(session: Session , phone_number: str):
 
     return training_id
 
-def test_uow_can_get_user_and_add_sets(session_factory_in_memory):
+
+def get_exercises_from_training_session(session: Session, training_session_id: str):
+    [result] = session.execute(text('SELECT name FROM exercises WHERE session_id = :training_session_id'), dict(training_session_id=training_session_id))
+
+    return result
+
+def test_uow_can_get_user_and_add_exercises(session_factory_in_memory):
     session = session_factory_in_memory()
     insert_user(session, '346578493123')
     insert_training_session(session, '346578493123')
@@ -58,15 +64,20 @@ def test_uow_can_get_user_and_add_sets(session_factory_in_memory):
     uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory_in_memory)
 
     with uow:
-        user = uow.user.get('346578493123')
-        training_set = model.Set(exercise = 'Press banca', series = 10, repetition = 5, kg = 12)
+        user = uow.users.get('346578493123')
+        exercise = model.Exercise(name = 'Press banca')
+        series = exercise.add_series()
+        repetition = model.Repetition(number = 1, kg = 12)
+        series.add_repetition(repetition)
         training_session = user.training_sessions[-1]
-        training_session.add_set(training_set)
+        training_session._add_exercise(exercise)
         
         uow.commit()
 
     training_session_ref = get_training_session_id(session, '346578493123')
+    exercises = get_exercises_from_training_session(session, training_session_ref)
     assert training_session_ref == "testsession3213"
+    assert 'press banca' in exercises
 
 
 def test_rolls_back_uncommited_work_by_default(session_factory_in_memory):

@@ -138,6 +138,11 @@ DOCUMENT_MESSAGE = {
                     'id': '1090723159084267'}
                   }
 
+
+DOCUMENT_MESSAGE_2 = {'from': '34635805355', 'id': 'wamid.HBgLMzQ2MzU4MDUzNTUVAgASGCBFMUExMjFBRDA2MzEyOUU1MzIzNzJFOEQ0MkFDMzZCMQA=',
+    'timestamp': '1732604503', 'type': 'document',
+     'document': {'filename': 'adrtest.csv', 'mime_type': 'text/csv', 'sha256': 'Jl/dvD63FGEYdTTcukcke3IxVDMpUzllcU98I1n3J4M=', 'id': '3089225344564153'}}
+
 VALID_AUDIO_MESSAGE_PAYLOAD = {'object': 'whatsapp_business_account',
                                 'entry': 
                                   [

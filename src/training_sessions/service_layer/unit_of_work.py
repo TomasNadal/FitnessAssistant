@@ -7,7 +7,7 @@ from src.training_sessions import config
 
 
 class AbstractUnitOfWork(abc.ABC):
-    user: repository.AbstractRepository
+    users: repository.AbstractRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -34,7 +34,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def __enter__(self):
         self.session = self.session_factory()
-        self.user = repository.SqlAlchemyRepository(self.session)
+        self.users = repository.SqlAlchemyRepository(self.session)
         return super().__enter__()
     
     def __exit__(self, *args):

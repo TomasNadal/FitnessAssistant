@@ -7,7 +7,7 @@ import requests
 from requests.exceptions import ConnectionError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, clear_mappers
-from src.training_sessions.domain.models import User, TrainingSession, Exercise, Series, Repetition
+from src.training_sessions.domain.models import User, WorkoutSession, Exercise, ExerciseSet, ExerciseRepetition
 from datetime import datetime, timedelta
 
 from src.training_sessions.adapters.orm import mapper_registry, start_mappers, registry
@@ -41,34 +41,40 @@ def test_data_folder():
 
 @pytest.fixture
 def sample_user():
-    return User(phone_number='+3467854323')
-
+    return User(phone_number='+3467854323', name="Test User", gender="Male")
 
 
 @pytest.fixture
-def sample_training_session(sample_user):
-    training_session = TrainingSession(
+def sample_workout_session(sample_user):
+    workout_session = WorkoutSession(
         started_at=datetime.now()
     )
 
-    sample_user.add_training_session(training_session)
+    # Add the session directly to the user's workout_sessions list
+    # since we can't use add_workout_session without ending the previous session
+    sample_user.workout_sessions.append(workout_session)
 
-    return training_session
-
+    return workout_session
 
 
 @pytest.fixture
-def list_of_training_sessions(sample_user):
-    list_of_training = [TrainingSession(
+def list_of_workout_sessions(sample_user):
+    list_of_workouts = [WorkoutSession(
         started_at=datetime.now() - timedelta(days=i)
     ) for i in range(1,4,1)]
 
-    for session in list_of_training:
-        sample_user.add_training_session(session)
-
-    return list_of_training
-
+    # Add the first session directly
+    sample_user.workout_sessions.append(list_of_workouts[0])
     
+    # End the first session so we can add more
+    list_of_workouts[0].end_time = list_of_workouts[0].start_time + timedelta(hours=1)
+    
+    # Add the remaining sessions, ending each one after adding
+    for session in list_of_workouts[1:]:
+        sample_user.add_workout_session(session)
+        session.end_time = session.start_time + timedelta(hours=1)
+
+    return list_of_workouts
 
 
 def wait_for_postgres_to_come_up(engine):
@@ -91,7 +97,6 @@ def wait_for_webapp_to_come_up():
         except ConnectionError:
             time.sleep(0.5)
     pytest.fail("API never came up")
-
 
 
 @pytest.fixture(scope="session")
@@ -119,6 +124,20 @@ def session_factory(postgres_db):
     clear_mappers()
 
 @pytest.fixture
+def session_factory_non_persistent(postgres_db):
+    start_mappers()
+    yield sessionmaker(bind = postgres_db)
+    # Clean up the database after the test
+    with postgres_db.begin() as conn:
+        # Delete all data from tables in reverse order of dependencies
+        conn.execute(mapper_registry.metadata.tables['exercise_sets'].delete())
+        conn.execute(mapper_registry.metadata.tables['exercises'].delete())
+        conn.execute(mapper_registry.metadata.tables['workout_sessions'].delete())
+        conn.execute(mapper_registry.metadata.tables['users'].delete())
+    clear_mappers()
+
+
+@pytest.fixture
 def restart_api():
     (Path(__file__).parent.parent / "src/training_sessions/entrypoints/flask_app.py").touch()
 
@@ -129,6 +148,11 @@ def restart_api():
 @pytest.fixture
 def valid_csv_adrencoder_path():
     adr_path = Path(__file__).parent / "fixtures" / "adrencoder.csv"
+    return adr_path
+
+@pytest.fixture
+def valid_csv_adrencoder_ejercicios_variados():
+    adr_path = Path(__file__).parent / "fixtures" / "adrejercicios.csv"
     return adr_path
 
 @pytest.fixture
@@ -143,7 +167,8 @@ from tests.fixtures.payloads import (
     INVALID_MESSAGE_PAYLOAD,
     INTERACTIVE_LIST_SEND_PAYLOAD,
     VALID_LIST_REPLY,
-    DOCUMENT_MESSAGE
+    DOCUMENT_MESSAGE,
+    DOCUMENT_MESSAGE_2  
 )
 
 # Define Test Payloads
@@ -174,3 +199,7 @@ def invalid_message_payload():
 @pytest.fixture
 def document_message_part():
     return DOCUMENT_MESSAGE
+
+@pytest.fixture
+def document_message_part_2():
+    return DOCUMENT_MESSAGE_2

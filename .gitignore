@@ -5,5 +5,7 @@
 .env
 adrencoder*.csv
 payloads.py
+*.csv
 *.ogg
 *.mp3
+/tmp
